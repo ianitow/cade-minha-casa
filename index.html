@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cadê Minha Casa?</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🏠</text></svg>" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Tela de jogo (Canvas 2D) -->
+  <canvas id="renderCanvas"></canvas>
+
+  <!-- ===== HUD em HTML sobreposto ===== -->
+  <div id="hud" class="hidden">
+    <div id="hudTopo">
+      <div id="objetivo"></div>
+      <div id="hudDireita">
+        <div id="timer" class="hidden"></div>
+        <div id="contador" class="hidden"></div>
+        <button id="btnMudo" title="Som">🔊</button>
+      </div>
+    </div>
+    <div id="dica" class="hidden"></div>
+    <div id="balao" class="hidden"></div>
+  </div>
+
+  <!-- Tela de loading (some na hora — 2D não carrega nada) -->
+  <div id="loading">
+    <div class="loadBox">
+      <h1 class="loadTitulo">Cadê Minha Casa?</h1>
+      <p id="loadTexto">Acordando o João…</p>
+      <div class="barraFora"><div id="barraDentro"></div></div>
+    </div>
+  </div>
+
+  <!-- Overlay de telas (menu, cutscene, fim) -->
+  <div id="overlay" class="hidden"></div>
+
+  <!-- ============ Scripts (sem CDN, sem build) ============ -->
+  <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/busca.js"></script>
+  <script src="js/cena_fase1.js"></script>
+  <script src="js/cena_fase2.js"></script>
+  <script src="js/cena_fase3.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

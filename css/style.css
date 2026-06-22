@@ -1,0 +1,212 @@
+/* =========================================================================
+ * style.css — canvas fullscreen + HUD/telas em HTML sobreposto.
+ * ========================================================================= */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --amarelo: #ffd23f;
+  --laranja: #ff8c29;
+  --escuro: #1a1226;
+  --painel: rgba(20, 12, 30, 0.82);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+  color: #fff;
+  -webkit-user-select: none; user-select: none;
+}
+
+#renderCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  outline: none;
+  touch-action: none;
+}
+
+.hidden { display: none !important; }
+
+/* ===================== HUD ===================== */
+#hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;        /* deixa o canvas receber input */
+  z-index: 10;
+}
+#hudTopo {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 14px 18px;
+  gap: 12px;
+}
+#objetivo {
+  background: var(--painel);
+  border: 2px solid var(--amarelo);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: clamp(14px, 2.4vw, 20px);
+  font-weight: bold;
+  max-width: 68%;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+}
+#hudDireita { display: flex; align-items: center; gap: 10px; }
+#timer, #contador {
+  background: var(--painel);
+  border: 2px solid #fff;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: clamp(14px, 2.4vw, 20px);
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+#timer.urgente { border-color: #ff4d4d; color: #ff4d4d; animation: pisca .5s steps(2) infinite; }
+@keyframes pisca { 50% { opacity: .35; } }
+
+#btnMudo {
+  pointer-events: auto;
+  cursor: pointer;
+  background: var(--painel);
+  border: 2px solid #fff;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 20px;
+  color: #fff;
+}
+#btnMudo:hover { border-color: var(--amarelo); }
+
+#dica {
+  position: absolute;
+  bottom: 26px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--painel);
+  border: 2px solid var(--amarelo);
+  border-radius: 30px;
+  padding: 10px 22px;
+  font-size: clamp(13px, 2.2vw, 18px);
+  text-align: center;
+  animation: flutua 1.6s ease-in-out infinite;
+}
+@keyframes flutua { 50% { transform: translateX(-50%) translateY(-5px); } }
+
+#balao {
+  position: absolute;
+  bottom: 90px; left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  color: #1a1226;
+  border-radius: 16px;
+  padding: 14px 22px;
+  font-size: clamp(14px, 2.4vw, 19px);
+  font-weight: bold;
+  text-align: center;
+  max-width: 80%;
+  box-shadow: 0 8px 20px rgba(0,0,0,.5);
+  animation: surge .25s ease;
+}
+#balao::after {
+  content: '';
+  position: absolute;
+  bottom: -10px; left: 50%;
+  transform: translateX(-50%);
+  border: 10px solid transparent;
+  border-top-color: #fff;
+  border-bottom: 0;
+}
+@keyframes surge { from { transform: translateX(-50%) scale(.7); opacity: 0; } }
+
+/* ===================== LOADING ===================== */
+#loading {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 35%, #3a2a52, #120a1c);
+}
+.loadBox { text-align: center; padding: 24px; }
+.loadTitulo {
+  font-size: clamp(28px, 7vw, 56px);
+  color: var(--amarelo);
+  text-shadow: 3px 3px 0 #000, 0 0 20px rgba(255,210,63,.4);
+  margin-bottom: 10px;
+}
+#loadTexto { opacity: .85; margin-bottom: 18px; font-size: clamp(14px,3vw,18px); }
+.barraFora {
+  width: min(360px, 80vw);
+  height: 18px;
+  border: 2px solid #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0 auto;
+  background: rgba(0,0,0,.4);
+}
+#barraDentro {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--amarelo), #ff8c29);
+  transition: width .2s ease;
+}
+
+/* ===================== OVERLAY (menu / cutscene / fim) ===================== */
+#overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+}
+#overlay.menu     { background: radial-gradient(circle at 50% 30%, #3a2a52, #0d0715); }
+#overlay.cutscene { background: rgba(5, 3, 10, 0.92); cursor: pointer; }
+#overlay.fim      { background: rgba(5, 3, 10, 0.88); }
+
+.painelOverlay { max-width: 760px; animation: surge .35s ease; }
+.painelOverlay h1 {
+  font-size: clamp(32px, 8vw, 64px);
+  color: var(--amarelo);
+  text-shadow: 4px 4px 0 #000, 0 0 24px rgba(255,210,63,.45);
+  margin-bottom: 8px;
+  line-height: 1.05;
+}
+.painelOverlay h2 {
+  font-size: clamp(18px, 3.4vw, 26px);
+  margin-bottom: 14px;
+  color: #fff;
+}
+.painelOverlay .sub { opacity: .8; margin-bottom: 26px; font-size: clamp(14px,2.8vw,18px); }
+.painelOverlay p.linha {
+  font-size: clamp(16px, 3.2vw, 24px);
+  line-height: 1.5;
+  margin: 0 auto 10px;
+  max-width: 640px;
+}
+.dicaOverlay { margin-top: 22px; opacity: .65; font-size: clamp(12px,2.4vw,15px); }
+
+.btnGrande {
+  pointer-events: auto;
+  cursor: pointer;
+  margin-top: 22px;
+  background: var(--amarelo);
+  color: #1a1226;
+  border: none;
+  border-radius: 40px;
+  padding: 16px 44px;
+  font-size: clamp(18px, 3.4vw, 26px);
+  font-weight: bold;
+  box-shadow: 0 6px 0 #b8951f, 0 10px 20px rgba(0,0,0,.4);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.btnGrande:hover { transform: translateY(-2px); }
+.btnGrande:active { transform: translateY(4px); box-shadow: 0 2px 0 #b8951f; }
+
+.creditos { margin-top: 30px; font-size: 12px; opacity: .5; }
