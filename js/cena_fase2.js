@@ -5,13 +5,19 @@
 window.Jogo = window.Jogo || {};
 Jogo.Cenas = Jogo.Cenas || {};
 
-Jogo.Cenas.fase2 = function (aoConcluir) {
+Jogo.Cenas.fase2 = function (aoConcluir, aoPerder) {
   const R = Jogo.R, C = Jogo.CONFIG, P = C.d2.player;
   const mundo = { x0: -360, x1: 360, y0: -250, y1: 290 };
 
   const joao = { x: 0, y: 200, t: 0, andando: false, flip: false };
-  const est = { ativo: false, venceu: false };
+  const est = { ativo: false, venceu: false, perdeu: false };
   let carteira = null;
+
+  const aliens = Jogo.Aliens({
+    quantos: C.d2.fase2Aliens, mundo, getJogador: () => joao,
+    aoPegar: () => perder('capturado'),
+    aoSurtar: () => perder('surto'),
+  });
 
   // objetos revistáveis
   const itens = [
@@ -49,16 +55,24 @@ Jogo.Cenas.fase2 = function (aoConcluir) {
       joao._ps = (joao._ps || 0) - dt; if (joao._ps <= 0) { Jogo.Audio.sfx('passo'); joao._ps = correndo ? 0.26 : 0.4; }
     } else joao.andando = false;
     alvo = busca.update(dt);
+    aliens.update(dt, joao);
     R.cam.x += (joao.x - R.cam.x) * Math.min(1, 8 * dt);
     R.cam.y += (joao.y - R.cam.y) * Math.min(1, 8 * dt);
   }
 
   function vencer() {
-    if (est.venceu) return;
+    if (est.venceu || est.perdeu) return;
     est.venceu = true; est.ativo = false;
-    Jogo.UI.dica(null);
+    Jogo.UI.dica(null); Jogo.UI.alucinacao(null);
     Jogo.UI.balao(C.txt.fase2.vitoria, 3200);
     setTimeout(aoConcluir, 2600);
+  }
+
+  function perder(motivo) {
+    if (est.perdeu || est.venceu) return;
+    est.perdeu = true; est.ativo = false;
+    Jogo.UI.dica(null);
+    if (aoPerder) aoPerder(motivo);
   }
 
   function paredes() {
@@ -78,9 +92,12 @@ Jogo.Cenas.fase2 = function (aoConcluir) {
       const rb = (it === alvo && !it.revistado) ? C.d2.busca.raio : 0;
       desenhos.push({ y: it.y, f: () => desenharItem(it, rb) });
     });
+    aliens.desenhos().forEach((d) => desenhos.push(d));
     desenhos.push({ y: joao.y, f: () => R.pessoa(joao.x, joao.y, { t: joao.t, andando: joao.andando, flip: joao.flip, cor: '#3b82d6' }) });
     if (carteira) desenhos.push({ y: carteira.y + 100, f: () => R.item(carteira.x, carteira.y, 'carteira', joao.t) });
     desenhos.sort((a, b) => a.y - b.y).forEach((d) => d.f());
+
+    aliens.efeito();
   }
 
   function desenharItem(it, rb) {

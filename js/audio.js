@@ -100,6 +100,14 @@ Jogo.Audio = (function () {
       const t = ctx.currentTime;
       [67, 64, 60, 55].forEach((m, i) => tom({ freq: midiFreq(m), t: t + i * 0.14, dur: 0.2, tipo: 'sawtooth', vol: 0.22 }));
     },
+    // blip curtíssimo do typewriter dos diálogos
+    tecla:    () => tom({ freq: 1300, dur: 0.018, tipo: 'square', vol: 0.05 }),
+    // zumbido alienígena quando você se aproxima demais
+    alien:    () => { tom({ freq: 180, freqFim: 70, dur: 0.3, tipo: 'sawtooth', vol: 0.1 }); tom({ freq: 1100, freqFim: 1700, dur: 0.18, tipo: 'sine', vol: 0.05 }); },
+    // boss jogando água
+    agua:     () => { ruido({ dur: 0.16, corte: 1200, filtro: 'lowpass', vol: 0.16 }); tom({ freq: 360, freqFim: 140, dur: 0.16, tipo: 'sine', vol: 0.12 }); },
+    // água acertou o João
+    dano:     () => { ruido({ dur: 0.22, corte: 900, filtro: 'lowpass', vol: 0.22 }); tom({ freq: 200, freqFim: 60, dur: 0.2, tipo: 'sawtooth', vol: 0.14 }); },
   };
 
   function sfx(nome) { resumir(); if (SFX[nome]) SFX[nome](); }

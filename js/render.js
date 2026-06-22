@@ -205,6 +205,122 @@ Jogo.R = (function () {
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   }
 
+  /* ---- alienígena (alucinação), âncora nos pés ---- */
+  function alienigena(x, y, o) {
+    o = o || {};
+    if (!noVisor(x, y, 90)) return;
+    const t = o.t || 0, fase = o.fase || 0;
+    const bob = Math.sin(t * 2 + fase) * 5;
+    const dir = (o.dir >= 0) ? 1 : -1;
+    const X = sx(x), Y = sy(y) - bob;
+    sombra(x, y, 16);
+    ctx.save();
+    ctx.translate(X, Y); ctx.scale(dir, 1);
+    // aura/brilho
+    let g = ctx.createRadialGradient(0, -34, 4, 0, -34, 48);
+    g.addColorStop(0, 'rgba(140,255,190,0.35)'); g.addColorStop(1, 'rgba(140,255,190,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -34, 48, 0, 7); ctx.fill();
+    // corpo (gota translúcida, leve squash)
+    const sq = 1 + Math.sin(t * 4 + fase) * 0.06;
+    ctx.fillStyle = 'rgba(98,224,150,0.78)';
+    ctx.beginPath(); ctx.ellipse(0, -16, 14, 16 * sq, 0, 0, 7); ctx.fill();
+    // cabeça grande
+    ctx.fillStyle = 'rgba(120,238,170,0.92)';
+    ctx.beginPath(); ctx.ellipse(0, -40, 16, 18, 0, 0, 7); ctx.fill();
+    // antenas com olhos na ponta
+    const wig = Math.sin(t * 5 + fase) * 3;
+    ctx.strokeStyle = 'rgba(120,238,170,0.92)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-7, -52); ctx.lineTo(-10 + wig, -64); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(7, -52); ctx.lineTo(10 + wig, -64); ctx.stroke();
+    // olhos pretos grandes
+    ctx.fillStyle = '#0a0f14';
+    ctx.beginPath(); ctx.ellipse(-10 + wig, -65, 4, 5, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(10 + wig, -65, 4, 5, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-6, -40, 4.5, 6, 0.3, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(6, -40, 4.5, 6, -0.3, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.beginPath(); ctx.arc(-7, -42, 1.3, 0, 7); ctx.arc(5, -42, 1.3, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+
+  /* ---- chefe de água (Fase 4), âncora no topo (x,y) ---- */
+  function chefeAgua(x, y, o) {
+    o = o || {};
+    const t = o.t || 0;
+    const X = sx(x), Y = sy(y);
+    const flash = o.hitFlash > 0;
+    ctx.save();
+    ctx.translate(X, Y);
+    // halo
+    let g = ctx.createRadialGradient(0, 70, 10, 0, 70, 140);
+    g.addColorStop(0, 'rgba(84,208,255,0.30)'); g.addColorStop(1, 'rgba(84,208,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 70, 140, 0, 7); ctx.fill();
+    // pingos escorrendo
+    ctx.fillStyle = 'rgba(84,208,255,0.5)';
+    for (let i = -2; i <= 2; i++) {
+      const dx = i * 28, dy = 122 + (Math.sin(t * 3 + i) * 0.5 + 0.5) * 26;
+      ctx.beginPath(); ctx.ellipse(dx, dy, 6, 11, 0, 0, 7); ctx.fill();
+    }
+    // corpo
+    ctx.fillStyle = flash ? 'rgba(220,245,255,0.92)' : 'rgba(84,208,255,0.6)';
+    const w1 = 72 + Math.sin(t * 3) * 8;
+    ctx.beginPath(); ctx.ellipse(0, 80, w1, 72 + Math.cos(t * 2.5) * 6, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = flash ? 'rgba(255,255,255,0.95)' : 'rgba(120,224,255,0.55)';
+    ctx.beginPath(); ctx.ellipse(0, 46, 56 + Math.sin(t * 4) * 6, 52, 0, 0, 7); ctx.fill();
+    // olhos
+    ctx.fillStyle = '#06121f';
+    ctx.beginPath(); ctx.ellipse(-22, 50, 9, 12, 0, 0, 7); ctx.ellipse(22, 50, 9, 12, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#bdf0ff';
+    ctx.beginPath(); ctx.arc(-19, 46, 3, 0, 7); ctx.arc(25, 46, 3, 0, 7); ctx.fill();
+    // boca brava
+    ctx.strokeStyle = '#06121f'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(0, 88, 20, Math.PI + 0.35, -0.35); ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ---- gota/projétil de água ---- */
+  function gotaAgua(x, y, raio, t) {
+    const X = sx(x), Y = sy(y);
+    ctx.save();
+    ctx.translate(X, Y);
+    const wob = Math.sin((t || 0) * 12) * 0.15;
+    ctx.fillStyle = 'rgba(84,208,255,0.85)';
+    ctx.beginPath(); ctx.ellipse(0, 0, raio * (1 + wob), raio * (1 - wob), 0, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(189,240,255,0.9)';
+    ctx.beginPath(); ctx.arc(-raio * 0.3, -raio * 0.3, raio * 0.3, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+
+  /* ---- efeito de alucinação em tela cheia (espaço de tela; ignora câmera) ---- */
+  function efeitoAlucinacao(frac) {
+    if (!(frac > 0)) return;
+    const f = Math.min(1, frac);
+    const tt = performance.now() / 1000;
+    ctx.save();
+    // ondas de cor psicodélicas
+    ctx.globalCompositeOperation = 'overlay';
+    const blobs = [
+      { hue: (tt * 40) % 360,        ox: Math.sin(tt * 0.8) * W * 0.25, oy: Math.cos(tt * 0.7) * H * 0.25 },
+      { hue: (tt * 40 + 140) % 360,  ox: Math.cos(tt * 0.6) * W * 0.30, oy: Math.sin(tt * 0.9) * H * 0.20 },
+      { hue: (tt * 40 + 250) % 360,  ox: Math.sin(tt * 1.1) * W * 0.20, oy: Math.cos(tt * 0.5) * H * 0.30 },
+    ];
+    for (const b of blobs) {
+      const cx = W / 2 + b.ox, cy = H / 2 + b.oy;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.6);
+      g.addColorStop(0, 'hsla(' + b.hue.toFixed(0) + ',90%,60%,' + (0.35 * f).toFixed(3) + ')');
+      g.addColorStop(1, 'hsla(' + b.hue.toFixed(0) + ',90%,60%,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    // vinheta escura pulsante
+    const pulse = 0.5 + 0.5 * Math.sin(tt * 6);
+    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * (0.35 - f * 0.1), W / 2, H / 2, Math.max(W, H) * 0.75);
+    vg.addColorStop(0, 'rgba(20,0,30,0)');
+    vg.addColorStop(1, 'rgba(20,0,30,' + (0.55 * f + 0.15 * f * pulse).toFixed(3) + ')');
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
   /* helper local: retângulo arredondado em coords de TELA já transladadas (dentro de save/translate) */
   function rr(x, y, w, h, cor, r) {
     if (cor) ctx.fillStyle = cor;
@@ -225,5 +341,6 @@ Jogo.R = (function () {
     ret, circ, sombra,
     predio, arvore, banco, mesa, caixa, balcao, anelBusca,
     pessoa, pombo, item, holofote,
+    alienigena, chefeAgua, gotaAgua, efeitoAlucinacao,
   };
 })();

@@ -10,9 +10,11 @@ Jogo.UI = (function () {
   const $ = (id) => document.getElementById(id);
   const el = {};
   ['hud', 'objetivo', 'timer', 'contador', 'dica', 'balao',
+   'alucinacao', 'alucBarra', 'chefeHP', 'chefeHPBarra', 'chefeHPNome',
    'loading', 'loadTexto', 'barraDentro', 'overlay'].forEach((id) => { el[id] = $(id); });
 
   let balaoTimer = null;
+  let dialogoRaf = null;   // RAF do typewriter (cancelado em limparOverlay)
 
   /* ===================== LOADING ===================== */
   function mostrarLoading() { el.loading.classList.remove('hidden'); barra(0); }
@@ -58,8 +60,27 @@ Jogo.UI = (function () {
     balaoTimer = setTimeout(() => el.balao.classList.add('hidden'), ms || 2600);
   }
 
+  // medidor de alucinação (0..1); null esconde
+  function alucinacao(frac) {
+    if (frac == null) { el.alucinacao.classList.add('hidden'); return; }
+    el.alucinacao.classList.remove('hidden');
+    const p = Math.max(0, Math.min(1, frac));
+    el.alucBarra.style.width = (p * 100).toFixed(0) + '%';
+    el.alucBarra.style.background = p < 0.5 ? '#7be07b' : p < 0.8 ? '#ffd23f' : '#ff4d4d';
+    el.alucinacao.classList.toggle('alerta', p > 0.8);
+  }
+
+  // barra de vida do chefe (0..1); null esconde
+  function chefeVida(frac) {
+    if (frac == null) { el.chefeHP.classList.add('hidden'); return; }
+    el.chefeHP.classList.remove('hidden');
+    const p = Math.max(0, Math.min(1, frac));
+    el.chefeHPBarra.style.width = (p * 100).toFixed(0) + '%';
+  }
+
   /* ===================== OVERLAY ===================== */
   function limparOverlay() {
+    if (dialogoRaf) { cancelAnimationFrame(dialogoRaf); dialogoRaf = null; }
     el.overlay.className = 'hidden';
     el.overlay.innerHTML = '';
     el.overlay.onclick = null;
@@ -93,36 +114,82 @@ Jogo.UI = (function () {
     p.appendChild(cred);
   }
 
-  // ---- CUTSCENE (revela linha por linha; clique/Espaço avança) ----
-  function cutscene(linhas, aoFim) {
-    limparOverlay();
-    el.overlay.className = 'cutscene';
-    const p = painel('');
-    const hint = document.createElement('p');
-    hint.className = 'dicaOverlay';
-    hint.textContent = '▶ clique ou ESPAÇO para continuar';
+  // ---- DIÁLOGO estilo RPG (retrato + typewriter; clique/Espaço completa/avança) ----
+  function normLinha(l) { return (typeof l === 'string') ? { quem: 'narrador', txt: l } : l; }
 
-    let i = 0;
-    function revelar() {
-      if (i < linhas.length) {
-        const linha = document.createElement('p');
-        linha.className = 'linha';
-        linha.textContent = linhas[i];
-        p.appendChild(linha);
-        p.appendChild(hint);   // appendChild move o hint p/ o fim (sempre por último)
-        i++;
-      } else {
-        limparOverlay();
-        aoFim();
-      }
+  function dialogo(linhas, aoFim) {
+    const C = Jogo.CONFIG;
+    limparOverlay();
+    el.overlay.className = 'dialogo';
+
+    const caixa = document.createElement('div');
+    caixa.className = 'caixaDialogo';
+    caixa.innerHTML =
+      '<canvas class="retrato" width="160" height="160"></canvas>' +
+      '<div class="dlgCorpo">' +
+        '<div class="nomeRetrato"></div>' +
+        '<p class="dlgTxt"></p>' +
+        '<p class="dicaOverlay">▶ toque / ESPAÇO</p>' +
+      '</div>';
+    el.overlay.appendChild(caixa);
+
+    const cv = caixa.querySelector('.retrato');
+    const ctx2d = cv.getContext('2d');
+    const elNome = caixa.querySelector('.nomeRetrato');
+    const elTxt = caixa.querySelector('.dlgTxt');
+
+    const vel = (C && C.txt.dlgVel) || 45;   // chars/seg
+    let i = 0, pos = 0, digitando = false, ultimoT = 0, txtAtual = '', somAcc = 0;
+
+    function mostrarLinha(n) {
+      const linha = normLinha(linhas[n]);
+      txtAtual = linha.txt || '';
+      const quem = linha.quem || 'narrador';
+      // retrato
+      Jogo.Retratos.desenhar(ctx2d, quem, cv.width, cv.height);
+      // nome
+      const nome = (C && C.txt.nomes && C.txt.nomes[quem] != null) ? C.txt.nomes[quem] : '';
+      elNome.textContent = nome;
+      elNome.style.display = nome ? 'block' : 'none';
+      // typewriter
+      pos = 0; digitando = true; somAcc = 0; elTxt.textContent = '';
+      ultimoT = 0;
+      if (dialogoRaf) cancelAnimationFrame(dialogoRaf);
+      dialogoRaf = requestAnimationFrame(tick);
     }
-    revelar(); // primeira linha já aparece
-    const avancar = () => revelar();
+
+    function tick(t) {
+      if (!ultimoT) ultimoT = t;
+      const dt = (t - ultimoT) / 1000; ultimoT = t;
+      pos += vel * dt;
+      const n = Math.min(txtAtual.length, Math.floor(pos));
+      elTxt.textContent = txtAtual.slice(0, n);
+      // som de tecla esparso
+      somAcc += vel * dt;
+      if (somAcc >= 3) { somAcc = 0; if (n < txtAtual.length) Jogo.Audio.sfx('tecla'); }
+      if (n >= txtAtual.length) { digitando = false; dialogoRaf = null; return; }
+      dialogoRaf = requestAnimationFrame(tick);
+    }
+
+    function avancar() {
+      if (digitando) {                 // completa a linha na hora
+        if (dialogoRaf) { cancelAnimationFrame(dialogoRaf); dialogoRaf = null; }
+        elTxt.textContent = txtAtual; digitando = false; return;
+      }
+      i++;
+      if (i < linhas.length) mostrarLinha(i);
+      else { limparOverlay(); if (aoFim) aoFim(); }
+    }
+
+    mostrarLinha(0);
     el.overlay.onclick = avancar;
     document.onkeydown = (e) => {
       if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); avancar(); }
     };
   }
+
+  // mantém a API antiga: cutscene agora é o diálogo RPG (string = narrador)
+  function cutscene(linhas, aoFim) { return dialogo(linhas, aoFim); }
 
   // ---- TELA DE FIM / VITÓRIA ----
   function telaFim(opts) {
@@ -137,11 +204,19 @@ Jogo.UI = (function () {
     btn.textContent = opts.textoBotao || 'Continuar';
     btn.onclick = () => { Jogo.Audio.resumir(); opts.aoBotao(); };
     p.appendChild(btn);
+    if (opts.textoBotao2) {
+      const btn2 = document.createElement('button');
+      btn2.className = 'btnGrande secundario';
+      btn2.textContent = opts.textoBotao2;
+      btn2.onclick = () => { Jogo.Audio.resumir(); opts.aoBotao2(); };
+      p.appendChild(btn2);
+    }
   }
 
   return {
     mostrarLoading, esconderLoading, loadTexto, barra, progresso,
     mostrarHUD, objetivo, timer, contador, dica, balao,
-    menu, cutscene, telaFim, limparOverlay,
+    alucinacao, chefeVida,
+    menu, cutscene, dialogo, telaFim, limparOverlay,
   };
 })();

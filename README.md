@@ -1,15 +1,26 @@
-# Cadê Minha Casa? 🏙️🍺
+# Cadê Minha Casa? 🏙️🍺👽
 
 Jogo **2D** de aventura e humor para navegador. Depois de uma noite no bar,
-**João** acorda perdido — sem celular, sem carteira e sem as chaves de casa.
-Em **3 fases** ele precisa recuperar tudo e voltar pra casa.
+**João** acorda perdido — sem celular, sem carteira, sem as chaves de casa…
+e, por causa do porre, **vendo ALIENS por todo lado**. Em **4 fases** ele
+precisa recuperar tudo, fugir dos ETs (que só existem na ressaca dele) e
+voltar pra casa.
 
-- **Fase 1 — Cadê Meu Celular?** Persiga (correndo!) o pombo que roubou seu celular. Encoste nele pra pegar.
-- **Fase 2 — A Carteira Perdida** Revasculhe as mesas da lanchonete até achar a carteira.
+- **Fase 1 — Cadê Meu Celular?** Vários pombos idênticos voam pela praça e **só um** está com seu celular. Encoste neles até achar o ladrão — e fuja dos aliens.
+- **Fase 2 — A Carteira Perdida** Revasculhe as mesas da lanchonete até achar a carteira, desviando dos ETs.
 - **Fase 3 — A Última Chave** Cace a chave escondida no bar, no escuro, guiado por uma lanterna e dicas de "quente/frio".
+- **Fase 4 — O Chefão Líquido (BOSS)** Um alienígena **feito de água** te encharca de jatos. Desvie, pegue as **cervejas** do chão e **tÁque de volta** até derrotá-lo.
+
+### Aliens & alucinação (perigo em todas as fases)
+Os aliens **vagueiam** pelo cenário. Se um **encostar** em você, é game over.
+Ficar **muito perto** por muito tempo enche o **medidor de alucinação** (👁 no
+HUD) — chegou a **100%**, João surta e você perde. Ao perder, dá pra **tentar
+de novo a mesma fase**. As mensagens da história são em **estilo RPG** (retrato
+do personagem + texto datilografado).
 
 Feito com **HTML + CSS + JavaScript puro** (Canvas 2D). **Sem bibliotecas, sem build,
-sem downloads.** Áudio (efeitos + música chiptune) é gerado por código com a WebAudio API.
+sem downloads.** Áudio (efeitos + música chiptune) e todos os personagens
+(inclusive aliens e o boss) são gerados por código — nenhuma imagem.
 
 ## Como rodar
 
@@ -27,7 +38,7 @@ python3 -m http.server 8000   # depois abra http://localhost:8000
 |------|---------|-------|
 | Andar | `W A S D` / setas | joystick (canto inferior esquerdo) |
 | Correr | `Shift` | empurrar o joystick até o limite |
-| Revistar / interagir | `E` ou `Espaço`, ou **clicar** na tela | botão "Revistar" |
+| Revistar / pegar / arremessar | `E` ou `Espaço`, ou **clicar** na tela | botão de ação |
 | Avançar diálogo | clique / `Espaço` | toque |
 | Mudo | botão 🔊 no canto superior direito | — |
 
@@ -35,17 +46,20 @@ python3 -m http.server 8000   # depois abra http://localhost:8000
 
 ```
 index.html              # canvas + HUD + ordem dos <script>
-css/style.css           # HUD/telas em HTML sobre o canvas
+css/style.css           # HUD/telas em HTML sobre o canvas (medidores, diálogo RPG)
 js/config.js            # constantes e TODO o texto/roteiro (PT-BR)
 js/audio.js             # WebAudio: efeitos + música chiptune por fase
-js/ui.js                # loading, HUD, cutscenes, menu, telas de fim
+js/portraits.js         # rostos dos personagens (retratos do diálogo RPG)
+js/ui.js                # loading, HUD, diálogo RPG (typewriter), menu, telas de fim
 js/input.js             # teclado + joystick de toque
-js/render.js            # motor de desenho 2D (câmera + formas)
+js/render.js            # motor de desenho 2D (câmera + formas, aliens, boss)
+js/aliens.js            # aliens errantes + medidor de alucinação (todas as fases)
 js/busca.js             # mecânica de "revistar" (Fases 2 e 3)
-js/cena_fase1.js        # Fase 1 — perseguição ao pombo
-js/cena_fase2.js        # Fase 2 — busca na lanchonete
-js/cena_fase3.js        # Fase 3 — busca no bar (com lanterna)
-js/game.js              # loop de render + máquina de estados (menu/vitória)
+js/cena_fase1.js        # Fase 1 — vários pombos + aliens
+js/cena_fase2.js        # Fase 2 — busca na lanchonete + aliens
+js/cena_fase3.js        # Fase 3 — busca no bar (com lanterna) + aliens
+js/cena_fase4.js        # Fase 4 — BOSS: o Chefão Líquido
+js/game.js              # loop de render + máquina de estados (menu/game over/vitória)
 ```
 
 Tudo é desenhado com **formas no canvas** (personagens, prédios, móveis), então
@@ -55,5 +69,7 @@ Os emojis aparecem só no HUD em HTML (objetivos, telas), onde o navegador os re
 ## Ajustes rápidos
 
 - Velocidades e dificuldade: `js/config.js` → bloco `d2` (`player`, `pombo`, `busca`, `fase1Tempo`).
-- Textos e piadas: `js/config.js` → bloco `txt`.
-- A carteira (Fase 2) e a chave (Fase 3) ficam num lugar **sorteado** a cada partida.
+- **Aliens / alucinação:** `js/config.js` → `d2.aliens` (`passeio`, `aura`, `captura`, `subida`, `descida`) e quantidade por fase (`fase1Extra.aliens`, `fase2Aliens`, `fase3Aliens`).
+- **Boss (Fase 4):** `js/config.js` → `d2.chefe` (vida, cadência dos jatos, velocidades, dano da água).
+- Textos e piadas: `js/config.js` → bloco `txt` (diálogos RPG aceitam `{ quem, txt }`).
+- O pombo certo (Fase 1), a carteira (Fase 2) e a chave (Fase 3) ficam **sorteados** a cada partida.

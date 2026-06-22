@@ -56,7 +56,7 @@ html, body {
   max-width: 68%;
   box-shadow: 0 4px 14px rgba(0,0,0,.4);
 }
-#hudDireita { display: flex; align-items: center; gap: 10px; }
+#hudDireita { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 #timer, #contador {
   background: var(--painel);
   border: 2px solid #fff;
@@ -68,6 +68,58 @@ html, body {
 }
 #timer.urgente { border-color: #ff4d4d; color: #ff4d4d; animation: pisca .5s steps(2) infinite; }
 @keyframes pisca { 50% { opacity: .35; } }
+
+/* medidor de alucinação */
+#alucinacao {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--painel);
+  border: 2px solid #fff;
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+#alucinacao .medLabel { font-size: clamp(13px, 2.4vw, 18px); line-height: 1; }
+#alucTrilho {
+  width: clamp(70px, 18vw, 130px);
+  height: clamp(10px, 2.6vw, 16px);
+  border-radius: 8px;
+  background: rgba(0,0,0,.5);
+  overflow: hidden;
+}
+#alucBarra {
+  height: 100%; width: 0%;   /* largura = nível, sobrescrita via JS */
+  background: #7be07b;        /* cor por nível, sobrescrita via JS */
+  border-radius: 8px;
+  transition: width .12s linear, background .2s linear;
+}
+#alucinacao.alerta { border-color: #ff4d4d; animation: pisca .5s steps(2) infinite; }
+
+/* barra de vida do chefe (topo-centro) */
+#chefeHP {
+  position: absolute;
+  top: 12px; left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, 86vw);
+  text-align: center;
+}
+#chefeHPNome {
+  font-weight: bold;
+  font-size: clamp(13px, 2.6vw, 20px);
+  color: #bdf0ff;
+  text-shadow: 2px 2px 0 #000;
+  margin-bottom: 4px;
+}
+#chefeHPFora {
+  height: clamp(14px, 3vw, 22px);
+  border: 2px solid #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0,0,0,.45);
+}
+#chefeHPBarra {
+  height: 100%; width: 100%;
+  background: linear-gradient(90deg, #54d0ff, #2a7fd6);
+  transition: width .2s ease;
+}
 
 #btnMudo {
   pointer-events: auto;
@@ -169,6 +221,55 @@ html, body {
 #overlay.menu     { background: radial-gradient(circle at 50% 30%, #3a2a52, #0d0715); }
 #overlay.cutscene { background: rgba(5, 3, 10, 0.92); cursor: pointer; }
 #overlay.fim      { background: rgba(5, 3, 10, 0.88); }
+#overlay.dialogo  {
+  background: rgba(5, 3, 10, 0.55);
+  cursor: pointer;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 16px 24px;
+}
+
+/* ---- Caixa de diálogo estilo RPG (retrato + typewriter) ---- */
+.caixaDialogo {
+  pointer-events: auto;
+  width: min(820px, 96vw);
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(10px, 2.5vw, 18px);
+  background: linear-gradient(180deg, rgba(28,18,42,0.96), rgba(14,8,24,0.96));
+  border: 3px solid var(--amarelo);
+  border-radius: 18px;
+  padding: clamp(12px, 2.5vw, 20px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.6);
+  animation: surge .25s ease;
+}
+.caixaDialogo .retrato {
+  flex: 0 0 auto;
+  width: clamp(64px, 18vw, 120px);
+  height: clamp(64px, 18vw, 120px);
+  border-radius: 14px;
+}
+.dlgCorpo { flex: 1 1 auto; min-width: 0; text-align: left; }
+.nomeRetrato {
+  color: var(--amarelo);
+  font-weight: bold;
+  font-size: clamp(15px, 3vw, 22px);
+  margin-bottom: 6px;
+  text-shadow: 2px 2px 0 #000;
+}
+.dlgTxt {
+  font-size: clamp(15px, 3.2vw, 23px);
+  line-height: 1.45;
+  min-height: 2.9em;          /* evita "pulo" do layout enquanto digita */
+  margin: 0;
+}
+#overlay.dialogo .dicaOverlay { margin-top: 12px; text-align: right; }
+
+@media (max-width: 420px) {
+  .caixaDialogo { flex-direction: column; align-items: center; gap: 8px; }
+  .caixaDialogo .dlgCorpo { text-align: center; }
+  #overlay.dialogo .dicaOverlay { text-align: center; }
+}
 
 .painelOverlay { max-width: 760px; animation: surge .35s ease; }
 .painelOverlay h1 {
@@ -208,5 +309,17 @@ html, body {
 }
 .btnGrande:hover { transform: translateY(-2px); }
 .btnGrande:active { transform: translateY(4px); box-shadow: 0 2px 0 #b8951f; }
+
+/* botão secundário (ex.: "Menu" na tela de game over) */
+.btnGrande.secundario {
+  background: transparent;
+  color: #fff;
+  border: 2px solid rgba(255,255,255,.5);
+  box-shadow: none;
+  margin-left: 12px;
+  padding: 14px 32px;
+}
+.btnGrande.secundario:hover { border-color: var(--amarelo); transform: translateY(-2px); }
+.btnGrande.secundario:active { transform: translateY(2px); box-shadow: none; }
 
 .creditos { margin-top: 30px; font-size: 12px; opacity: .5; }

@@ -49,18 +49,44 @@ Jogo.Game = (function () {
     // 1º limpa o estado anterior, DEPOIS constrói a nova cena
     if (cenaAtual && cenaAtual.dispose) { try { cenaAtual.dispose(); } catch (e) { console.warn(e); } }
     Jogo.Input.limparAcoes();
-    Jogo.UI.timer(null); Jogo.UI.contador(null); Jogo.UI.dica(null); Jogo.UI.mostrarHUD(false);
+    Jogo.UI.timer(null); Jogo.UI.contador(null); Jogo.UI.dica(null);
+    Jogo.UI.alucinacao(null); Jogo.UI.chefeVida(null); Jogo.UI.mostrarHUD(false);
     const nova = fabrica();
     cenaAtual = nova; api.cenaAtual = nova;
   }
 
+  let faseAtual = 1;
+
   /* -------- estados -------- */
   function irMenu() { trocar(cenaMenu); }
   function comecar() { Jogo.UI.cutscene(C.txt.abertura, irFase1); }
-  function irFase1() { trocar(() => Jogo.Cenas.fase1(() => Jogo.UI.cutscene(C.txt.transicao1, irFase2))); }
-  function irFase2() { trocar(() => Jogo.Cenas.fase2(() => Jogo.UI.cutscene(C.txt.transicao2, irFase3))); }
-  function irFase3() { trocar(() => Jogo.Cenas.fase3(() => Jogo.UI.cutscene(C.txt.final, irVitoria))); }
+  function irFase1() { faseAtual = 1; trocar(() => Jogo.Cenas.fase1(() => Jogo.UI.cutscene(C.txt.transicao1, irFase2), perder)); }
+  function irFase2() { faseAtual = 2; trocar(() => Jogo.Cenas.fase2(() => Jogo.UI.cutscene(C.txt.transicao2, irFase3), perder)); }
+  function irFase3() { faseAtual = 3; trocar(() => Jogo.Cenas.fase3(() => Jogo.UI.cutscene(C.txt.transicao3, irFase4), perder)); }
+  function irFase4() { faseAtual = 4; trocar(() => Jogo.Cenas.fase4(() => Jogo.UI.cutscene(C.txt.final, irVitoria), perder)); }
   function irVitoria() { trocar(cenaVitoria); }
+
+  // recomeça SOMENTE a fase em que o jogador perdeu (cada irFaseN reconstrói via trocar)
+  function reiniciarFase() {
+    ({ 1: irFase1, 2: irFase2, 3: irFase3, 4: irFase4 }[faseAtual] || irFase1)();
+  }
+
+  // chamado pelas cenas via aoPerder(motivo): diálogo RPG de game over + tela de fim
+  function perder(motivo) {
+    const go = C.txt.gameover || {};
+    const linhas = go[motivo] || go.padrao || ['Game over'];
+    Jogo.Audio.sfx('derrota');
+    Jogo.UI.dialogo(linhas, () => {
+      Jogo.UI.telaFim({
+        titulo: C.txt.gameoverTitulo,
+        linhas: [C.txt.gameoverSub],
+        textoBotao: C.txt.tentarDeNovo,
+        aoBotao: () => { Jogo.Audio.sfx('clique'); reiniciarFase(); },
+        textoBotao2: C.txt.menu,
+        aoBotao2: () => { Jogo.Audio.sfx('clique'); irMenu(); },
+      });
+    });
+  }
 
   /* -------- cena de MENU (praça parada de fundo) -------- */
   function cenaMenu() {
@@ -137,7 +163,7 @@ Jogo.Game = (function () {
     });
   }
 
-  const api = { iniciar, irMenu, irFase1, irFase2, irFase3, irVitoria, comecar, cenaAtual: null };
+  const api = { iniciar, irMenu, irFase1, irFase2, irFase3, irFase4, irVitoria, comecar, reiniciarFase, cenaAtual: null };
   return api;
 })();
 

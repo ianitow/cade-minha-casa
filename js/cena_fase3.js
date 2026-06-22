@@ -6,13 +6,19 @@
 window.Jogo = window.Jogo || {};
 Jogo.Cenas = Jogo.Cenas || {};
 
-Jogo.Cenas.fase3 = function (aoConcluir) {
+Jogo.Cenas.fase3 = function (aoConcluir, aoPerder) {
   const R = Jogo.R, C = Jogo.CONFIG, P = C.d2.player;
   const mundo = { x0: -540, x1: 540, y0: -360, y1: 440 };
 
   const joao = { x: 0, y: 320, t: 0, andando: false, flip: false };
-  const est = { ativo: false, venceu: false };
+  const est = { ativo: false, venceu: false, perdeu: false };
   let chave = null;
+
+  const aliens = Jogo.Aliens({
+    quantos: C.d2.fase3Aliens, mundo, getJogador: () => joao,
+    aoPegar: () => perder('capturado'),
+    aoSurtar: () => perder('surto'),
+  });
 
   const itens = [
     { x: -380, y: -160, nome: 'a mesa 1', tipo: 'mesa' }, { x: -180, y: -120, nome: 'a mesa 2', tipo: 'mesa' },
@@ -48,16 +54,24 @@ Jogo.Cenas.fase3 = function (aoConcluir) {
       joao._ps = (joao._ps || 0) - dt; if (joao._ps <= 0) { Jogo.Audio.sfx('passo'); joao._ps = correndo ? 0.26 : 0.4; }
     } else joao.andando = false;
     alvo = busca.update(dt);
+    aliens.update(dt, joao);
     R.cam.x += (joao.x - R.cam.x) * Math.min(1, 8 * dt);
     R.cam.y += (joao.y - R.cam.y) * Math.min(1, 8 * dt);
   }
 
   function vencer() {
-    if (est.venceu) return;
+    if (est.venceu || est.perdeu) return;
     est.venceu = true; est.ativo = false;
-    Jogo.UI.dica(null); Jogo.UI.objetivo(C.txt.fase3.objetivo);
+    Jogo.UI.dica(null); Jogo.UI.objetivo(C.txt.fase3.objetivo); Jogo.UI.alucinacao(null);
     Jogo.UI.balao(C.txt.fase3.vitoria, 3400);
     setTimeout(aoConcluir, 2800);
+  }
+
+  function perder(motivo) {
+    if (est.perdeu || est.venceu) return;
+    est.perdeu = true; est.ativo = false;
+    Jogo.UI.dica(null);
+    if (aoPerder) aoPerder(motivo);
   }
 
   function paredes() {
@@ -77,12 +91,14 @@ Jogo.Cenas.fase3 = function (aoConcluir) {
       const rb = (it === alvo && !it.revistado) ? C.d2.busca.raio : 0;
       desenhos.push({ y: it.y, f: () => desenharItem(it, rb) });
     });
+    aliens.desenhos().forEach((d) => desenhos.push(d));
     desenhos.push({ y: joao.y, f: () => R.pessoa(joao.x, joao.y, { t: joao.t, andando: joao.andando, flip: joao.flip, cor: '#3b82d6' }) });
     if (chave) desenhos.push({ y: chave.y + 100, f: () => R.item(chave.x, chave.y, 'chave', joao.t) });
     desenhos.sort((a, b) => a.y - b.y).forEach((d) => d.f());
 
     // escuridão + holofote por cima de tudo
     R.holofote(joao.x, joao.y, 280);
+    aliens.efeito();   // alucinação por cima do holofote
   }
 
   function desenharItem(it, rb) {
