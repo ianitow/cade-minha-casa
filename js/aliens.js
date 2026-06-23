@@ -85,24 +85,34 @@ Jogo.Aliens = function (opts) {
   // pan/vol posicional p/ voz; SEMPRE há alguém falando (um de cada vez)
   function volPorDist(d) { return Math.max(0.12, Math.min(1, 1 - d / (vozRaio * 2))) * vozVol; }
 
+  function maisProximo(joao) {
+    let prox = null, md = Infinity;
+    for (const a of aliens) { const d = Math.hypot(a.x - joao.x, a.y - joao.y); if (d < md) { md = d; prox = a; } }
+    return { prox, md };
+  }
+
   function atualizarVozes(dt, joao) {
     cooldownVoz -= dt;
+    const { prox, md } = maisProximo(joao);
+
     if (falante) {
-      const d = Math.hypot(falante.x - joao.x, falante.y - joao.y);
-      if (vozHandle) {
-        vozHandle.setPan(clamp((falante.x - joao.x) / 400, -1, 1));
-        vozHandle.setVol(volPorDist(d));
+      const df = Math.hypot(falante.x - joao.x, falante.y - joao.y);
+      // TROCA DINÂMICA: outro ET ficou bem mais perto → corta e passa pra ele
+      if (prox && prox !== falante && md < df * 0.7) {
+        if (vozHandle) { try { vozHandle.stop(); } catch (e) {} }
+        falante.falando = false; falante = null; vozHandle = null; cooldownVoz = 0;
+        // segue pro bloco de iniciar (toca outra fala do ET mais próximo)
+      } else {
+        if (vozHandle) { vozHandle.setPan(clamp((falante.x - joao.x) / 400, -1, 1)); vozHandle.setVol(volPorDist(df)); }
+        if (!Jogo.Audio.vozOcupada()) { falante.falando = false; falante = null; vozHandle = null; cooldownVoz = 0.25; }
+        return;
       }
-      if (!Jogo.Audio.vozOcupada()) { falante.falando = false; falante = null; vozHandle = null; cooldownVoz = 0.25; }
-      return;
     }
-    if (cooldownVoz > 0 || vozPausada || Jogo.Audio.vozOcupada() || !aliens.length) return;
-    // escolhe SEMPRE o ET mais próximo do João (o de perto é o que se ouve)
-    let melhor = aliens[0], md = Infinity;
-    for (const a of aliens) { const d = Math.hypot(a.x - joao.x, a.y - joao.y); if (d < md) { md = d; melhor = a; } }
-    const pan = clamp((melhor.x - joao.x) / 400, -1, 1);
+
+    if (cooldownVoz > 0 || vozPausada || Jogo.Audio.vozOcupada() || !prox) return;
+    const pan = clamp((prox.x - joao.x) / 400, -1, 1);
     const h = Jogo.Audio.tocarVoz(Jogo.Audio.vozAleatoria(), { pan, vol: volPorDist(md) });
-    if (h) { falante = melhor; melhor.falando = true; vozHandle = h; }
+    if (h) { falante = prox; prox.falando = true; vozHandle = h; }
     else cooldownVoz = 0.4;
   }
 

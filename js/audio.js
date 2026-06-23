@@ -20,10 +20,16 @@ Jogo.Audio = (function () {
     const AC = window.AudioContext || window.webkitAudioContext;
     ctx = new AC();
     master = ctx.createGain();
-    master.gain.value = 0.5;
+    master.gain.value = 0.9;
     master.connect(ctx.destination);
-    musicaGain = ctx.createGain(); musicaGain.gain.value = 0.4; musicaGain.connect(master);  // fundo baixo
-    mp3Gain = ctx.createGain();    mp3Gain.gain.value = 1.7;    mp3Gain.connect(master);     // mp3 alto
+    musicaGain = ctx.createGain(); musicaGain.gain.value = 0.5; musicaGain.connect(master);   // fundo baixo
+    // bus dos MP3: ganho alto + limitador (não estoura) → memes altos e claros
+    mp3Gain = ctx.createGain(); mp3Gain.gain.value = 2.0;
+    if (ctx.createDynamicsCompressor) {
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -10; comp.ratio.value = 6; comp.attack.value = 0.003; comp.release.value = 0.12;
+      mp3Gain.connect(comp); comp.connect(master);
+    } else { mp3Gain.connect(master); }
     noiseBuffer = criarNoise();
   }
   function resumir() {
