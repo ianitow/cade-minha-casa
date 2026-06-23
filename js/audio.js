@@ -123,6 +123,39 @@ Jogo.Audio = (function () {
 
   function sfx(nome) { resumir(); if (SFX[nome]) SFX[nome](); }
 
+  /* "muuu" sintetizado da vaquinha (posicional via pan) */
+  function muu(opts) {
+    resumir();
+    if (!ctx || mudo) return;
+    opts = opts || {};
+    const t0 = ctx.currentTime, dur = 0.7;
+    const saida = ctx.createGain();
+    saida.gain.value = opts.vol != null ? opts.vol : 0.5;
+    if (opts.pan != null && ctx.createStereoPanner) {
+      const pan = ctx.createStereoPanner();
+      pan.pan.value = Math.max(-1, Math.min(1, opts.pan));
+      saida.connect(pan); pan.connect(master);
+    } else saida.connect(master);
+    // tom grave que cai (mu-u-u) + vibrato
+    const o1 = ctx.createOscillator(); o1.type = 'sawtooth';
+    o1.frequency.setValueAtTime(150, t0);
+    o1.frequency.linearRampToValueAtTime(118, t0 + 0.18);
+    o1.frequency.linearRampToValueAtTime(96, t0 + dur);
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 7;
+    const lfoG = ctx.createGain(); lfoG.gain.value = 6; lfo.connect(lfoG); lfoG.connect(o1.frequency);
+    const o2 = ctx.createOscillator(); o2.type = 'triangle';
+    o2.frequency.setValueAtTime(300, t0); o2.frequency.linearRampToValueAtTime(190, t0 + dur);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(1, t0 + 0.06);
+    g.gain.setValueAtTime(1, t0 + dur - 0.22);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o1.connect(lp); o2.connect(lp); lp.connect(g); g.connect(saida);
+    o1.start(t0); o2.start(t0); lfo.start(t0);
+    o1.stop(t0 + dur + 0.05); o2.stop(t0 + dur + 0.05); lfo.stop(t0 + dur + 0.05);
+  }
+
   /* ======================= MP3 / SAMPLES ======================= */
   const CAMINHOS = {
     morte_et:   'audio/busquem_conhecimento.mp3',
@@ -300,7 +333,7 @@ Jogo.Audio = (function () {
   }
 
   return {
-    resumir, sfx, tocarMusica, pararMusica, alternarMudo,
+    resumir, sfx, muu, tocarMusica, pararMusica, alternarMudo,
     tocarSom, tocarLoop, pararLoop, tocarVoz, vozOcupada, vozAleatoria, carregar, precarregar,
   };
 })();

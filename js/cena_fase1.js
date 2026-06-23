@@ -56,13 +56,21 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
     const cows = [];
     for (let i = 0; i < 3; i++) cows.push({ x: cx - 90 + i * 90 + rnd(-12, 12), y: cy + rnd(-26, 26), abduz: 0 });
     const nv = { x: cx, y: cy - 210, t: Math.random() * 5, alvo: -1, beam: 0, espera: 1 + Math.random() * 3 };
+    let mooT = 2 + Math.random() * 4;
+    function mugir(cow, vol) {
+      const d = Math.hypot(cow.x - joao.x, cow.y - joao.y);
+      Jogo.Audio.muu({ pan: clamp((cow.x - joao.x) / 440, -1, 1), vol: Math.max(0.08, Math.min(vol || 0.55, (vol || 0.55) * (1 - d / 760))) });
+    }
     function update(dt) {
       nv.t += dt;
+      // muuu ambiente de uma vaquinha aleatória
+      mooT -= dt;
+      if (mooT <= 0) { mooT = 4 + Math.random() * 5; mugir(cows[Math.floor(Math.random() * cows.length)], 0.5); }
       if (nv.alvo < 0) {
         nv.beam = Math.max(0, nv.beam - dt * 2);
         nv.x += Math.sin(nv.t * 0.5) * 26 * dt;
         nv.espera -= dt;
-        if (nv.espera <= 0) { nv.alvo = Math.floor(Math.random() * cows.length); }
+        if (nv.espera <= 0) { nv.alvo = Math.floor(Math.random() * cows.length); mugir(cows[nv.alvo], 0.7); }  // muuu de pânico
       } else {
         const cow = cows[nv.alvo];
         nv.x += (cow.x - nv.x) * Math.min(1, 2.4 * dt);
