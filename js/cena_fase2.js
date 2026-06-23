@@ -42,6 +42,12 @@ Jogo.Cenas.fase2 = function (aoConcluir, aoPerder) {
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function rnd(a, b) { return a + Math.random() * (b - a); }
+  function pv(o) {
+    const d = Math.hypot(o.x - joao.x, o.y - joao.y);
+    return { pan: clamp((o.x - joao.x) / 420, -1, 1), vol: Math.max(0.12, Math.min(1, 1 - d / (o.raio * 1.2))) };
+  }
+  // MC KATRINA: criança que fala (prioridade de voz perto dela)
+  const kat = { x: -150, y: 120, t: 0, raio: 150, cd: 1.0, falando: false, _h: null };
   let alvo = null;
 
   // ---- portais por onde os ETs surgem ----
@@ -83,6 +89,21 @@ Jogo.Cenas.fase2 = function (aoConcluir, aoPerder) {
     alvo = busca.update(dt);
     atualizarPortais(dt);
     aliens.update(dt, joao);
+
+    // ---- MC KATRINA (fala; prioridade de voz perto dela) ----
+    kat.t += dt;
+    const pertoKat = Math.hypot(kat.x - joao.x, kat.y - joao.y) < kat.raio;
+    aliens.pausarVoz(pertoKat);
+    kat.cd -= dt;
+    if (kat._h) {
+      const d = pv(kat); if (kat._h.setPan) { kat._h.setPan(d.pan); kat._h.setVol(d.vol); }
+      if (!pertoKat) { if (kat._h.stop) kat._h.stop(); kat._h = null; kat.falando = false; kat.cd = 1.0; }
+      else if (!Jogo.Audio.vozOcupada()) { kat._h = null; kat.falando = false; kat.cd = 1.5 + Math.random() * 1.5; }
+    } else if (pertoKat) {
+      if (Jogo.Audio.vozOcupada()) aliens.parar();
+      else if (kat.cd <= 0) { const d = pv(kat); const h = Jogo.Audio.tocarVoz('crianca', { pan: d.pan, vol: d.vol }); if (h) { kat._h = h; kat.falando = true; } else kat.cd = 0.4; }
+    }
+
     R.cam.x += (joao.x - R.cam.x) * Math.min(1, 8 * dt);
     R.cam.y += (joao.y - R.cam.y) * Math.min(1, 8 * dt);
   }
@@ -121,6 +142,7 @@ Jogo.Cenas.fase2 = function (aoConcluir, aoPerder) {
     });
     portais.forEach((pt) => desenhos.push({ y: pt.y, f: () => R.portal(pt.x, pt.y, { t: pt.t, escala: pt.escala }) }));
     aliens.desenhos().forEach((d) => desenhos.push(d));
+    desenhos.push({ y: kat.y, f: () => { R.crianca(kat.x, kat.y, { t: kat.t, flip: false }); R.nomeNPC(kat.x, kat.y - 58, 'MC KATRINA', '#ff5fae'); if (kat.falando) R.iconeVoz(kat.x, kat.y - 84, kat.t); } });
     desenhos.push({ y: joao.y, f: () => R.pessoa(joao.x, joao.y, { t: joao.t, andando: joao.andando, flip: joao.flip, cor: '#3b82d6' }) });
     if (carteira) desenhos.push({ y: carteira.y + 100, f: () => R.item(carteira.x, carteira.y, 'carteira', joao.t) });
     desenhos.sort((a, b) => a.y - b.y).forEach((d) => d.f());
@@ -153,6 +175,6 @@ Jogo.Cenas.fase2 = function (aoConcluir, aoPerder) {
   return {
     get ativo() { return est.ativo; },
     update, draw, _dbg: { vencer, perder },
-    dispose() { desinscrever(); aliens.parar(); Jogo.Audio.pararLoop(); Jogo.Input.mostrarToque(false); },
+    dispose() { desinscrever(); aliens.parar(); if (kat._h && kat._h.stop) kat._h.stop(); Jogo.Audio.pararLoop(); Jogo.Input.mostrarToque(false); },
   };
 };

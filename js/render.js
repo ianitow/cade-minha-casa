@@ -444,6 +444,24 @@ Jogo.R = (function () {
     ctx.restore();
   }
 
+  /* ---- criança (Fase 2), versão baixinha da pessoa, âncora nos pés ---- */
+  function crianca(x, y, o) {
+    o = o || {};
+    const bob = o.andando ? Math.sin(o.t * 12) * 2 : Math.sin(o.t * 3) * 1;
+    const X = sx(x), Y = sy(y) - bob, flip = o.flip ? -1 : 1;
+    sombra(x, y, 13);
+    ctx.save();
+    ctx.translate(X, Y); ctx.scale(flip * 0.72, 0.72);   // menorzinha
+    rr(-8, -16, 7, 16, '#3a2e55'); rr(1, -16, 7, 16, '#3a2e55');   // pernas
+    rr(-12, -38, 24, 24, o.cor || '#e0567a', 6);                    // tronco
+    rr(-16, -36, 6, 16, o.cor || '#e0567a', 3); rr(10, -36, 6, 16, o.cor || '#e0567a', 3);
+    ctx.fillStyle = '#e8b88a'; ctx.beginPath(); ctx.arc(0, -48, 11, 0, 7); ctx.fill();   // cabeça
+    ctx.fillStyle = '#2a1a12'; ctx.beginPath(); ctx.arc(0, -52, 11, Math.PI, 0); ctx.fill();
+    rr(-11, -52, 22, 4, '#2a1a12', 2);
+    ctx.fillStyle = '#1a1226'; ctx.beginPath(); ctx.arc(-4, -47, 1.6, 0, 7); ctx.arc(4, -47, 1.6, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+
   /* ---- gato (Fase 3, no escuro: olhinhos brilham), âncora nos pés ---- */
   function gato(x, y, o) {
     o = o || {};
@@ -514,6 +532,6 @@ Jogo.R = (function () {
     predio, arvore, banco, mesa, caixa, balcao, anelBusca,
     pessoa, pombo, item, holofote,
     alienigena, chefeAgua, gotaAgua, efeitoAlucinacao,
-    vaca, nave, portal, cachorro, galinha, gato, iconeVoz, nomeNPC, tremor,
+    vaca, nave, portal, cachorro, galinha, gato, crianca, iconeVoz, nomeNPC, tremor,
   };
 })();
