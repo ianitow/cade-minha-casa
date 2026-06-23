@@ -25,6 +25,7 @@ Jogo.Audio = (function () {
   function resumir() {
     garantir();
     if (ctx.state === 'suspended') ctx.resume();
+    precarregar();
   }
   function criarNoise() {
     const len = ctx.sampleRate * 0.5;
@@ -112,6 +113,111 @@ Jogo.Audio = (function () {
 
   function sfx(nome) { resumir(); if (SFX[nome]) SFX[nome](); }
 
+  /* ======================= MP3 / SAMPLES ======================= */
+  const CAMINHOS = {
+    morte_et:   'audio/busquem_conhecimento.mp3',
+    surto:      'audio/miau-triste.mp3',
+    cachorro:   'audio/animals-auuuuuuuuuu.mp3',
+    boss_bolha: 'audio/vinheta-xaropinho-rapaz_dx3f4Be.mp3',
+    fim:        'audio/bem-amigos-terminou.mp3',
+    dexter:     'audio/dexter-meme.mp3',
+    seu_ze:     'audio/seu-ze-finjo.mp3',
+    et_2: 'audio/et_2.mp3', et_3: 'audio/et_3.mp3', et_4: 'audio/et_4.mp3',
+    et_5: 'audio/et_5.mp3', et_6: 'audio/et_6.mp3',
+  };
+  const VOZES = ['et_2', 'et_3', 'et_4', 'et_5', 'et_6'];
+  const BUFFERS = {};
+  const carregando = {};
+  let preloaded = false;
+
+  function carregar(nome) {
+    if (BUFFERS[nome]) return Promise.resolve(BUFFERS[nome]);
+    if (carregando[nome]) return carregando[nome];
+    const url = CAMINHOS[nome];
+    if (!url || !ctx) return Promise.resolve(null);
+    carregando[nome] = fetch(url)
+      .then((r) => r.arrayBuffer())
+      .then((ab) => new Promise((res, rej) => {
+        const p = ctx.decodeAudioData(ab, (buf) => res(buf), (e) => rej(e));
+        if (p && p.then) p.then(res, rej);     // navegadores modernos retornam Promise
+      }))
+      .then((buf) => { BUFFERS[nome] = buf; return buf; })
+      .catch((e) => { console.warn('áudio falhou:', nome, e); return null; });
+    return carregando[nome];
+  }
+  function precarregar() {
+    if (preloaded || !ctx) return;
+    preloaded = true;
+    Object.keys(CAMINHOS).forEach(carregar);
+  }
+
+  function _play(buf, opts) {
+    opts = opts || {};
+    const src = ctx.createBufferSource();
+    src.buffer = buf; src.loop = !!opts.loop;
+    const g = ctx.createGain();
+    g.gain.value = opts.vol != null ? opts.vol : 1;
+    let panner = null;
+    if (opts.pan != null && ctx.createStereoPanner) {
+      panner = ctx.createStereoPanner();
+      panner.pan.value = Math.max(-1, Math.min(1, opts.pan));
+      src.connect(panner); panner.connect(g);
+    } else { src.connect(g); }
+    g.connect(master);
+    src.start();
+    const h = {
+      src, g, panner, tocando: true,
+      stop() { try { src.stop(); } catch (e) {} },
+      setPan(p) { if (panner) panner.pan.value = Math.max(-1, Math.min(1, p)); },
+      setVol(v) { g.gain.value = v; },
+    };
+    src.onended = () => { h.tocando = false; if (opts.onfim) opts.onfim(); };
+    return h;
+  }
+
+  // one-shot (ou loop) de um mp3; carrega na hora se ainda não estiver pronto
+  function tocarSom(nome, opts) {
+    resumir();
+    if (!ctx) return null;
+    if (BUFFERS[nome]) return _play(BUFFERS[nome], opts);
+    const stub = { tocando: true, _cancel: false, stop() { this._cancel = true; }, setPan() {}, setVol() {} };
+    carregar(nome).then((buf) => {
+      if (buf && !stub._cancel) { const real = _play(buf, opts); stub.stop = () => real.stop(); stub.setPan = real.setPan; stub.setVol = real.setVol; }
+    });
+    return stub;
+  }
+
+  /* loop dedicado p/ música de fase em mp3 (ex.: dexter na Fase 2) */
+  let loopAtual = null, loopNome = null;
+  function tocarLoop(nome, vol) {
+    resumir();
+    if (loopNome === nome && loopAtual) return;
+    pararLoop(); pararMusica();
+    loopNome = nome;
+    carregar(nome).then((buf) => {
+      if (!buf || loopNome !== nome) return;
+      loopAtual = _play(buf, { loop: true, vol: vol != null ? vol : 0.5 });
+    });
+  }
+  function pararLoop() {
+    if (loopAtual) { loopAtual.stop(); loopAtual = null; }
+    loopNome = null;
+  }
+
+  /* canal ÚNICO de voz: só um ET fala por vez */
+  let vozAtual = null;
+  function vozOcupada() { return !!(vozAtual && vozAtual.tocando); }
+  function tocarVoz(nome, opts) {
+    resumir();
+    if (vozOcupada()) return null;
+    if (!ctx || !BUFFERS[nome]) { carregar(nome); return null; }   // ainda não pronto → na próxima
+    opts = opts || {};
+    const fim = opts.onfim;
+    vozAtual = _play(BUFFERS[nome], Object.assign({}, opts, { onfim: () => { vozAtual = null; if (fim) fim(); } }));
+    return vozAtual;
+  }
+  function vozAleatoria() { return VOZES[Math.floor(Math.random() * VOZES.length)]; }
+
   /* ====================== MÚSICA (chiptune) ====================== */
   // Sequenciador de 16 passos (semicolcheias). Cada fase tem melodia + baixo.
   const MUSICAS = {
@@ -183,5 +289,8 @@ Jogo.Audio = (function () {
     return mudo;   // true = mutado
   }
 
-  return { resumir, sfx, tocarMusica, pararMusica, alternarMudo };
+  return {
+    resumir, sfx, tocarMusica, pararMusica, alternarMudo,
+    tocarSom, tocarLoop, pararLoop, tocarVoz, vozOcupada, vozAleatoria, carregar, precarregar,
+  };
 })();

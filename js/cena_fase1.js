@@ -1,26 +1,32 @@
 /* =========================================================================
- * cena_fase1.js — Fase 1: "Cadê Meu Celular?"
- * Perseguição 2D top-down. Agora são VÁRIOS pombos idênticos e só UM está
- * com o celular — você precisa encostar até achar o ladrão. Os ALIENS da
- * ressaca vagueiam pela praça: encostar = game over, ficar perto enche o
- * medidor de alucinação. O cronômetro de fôlego continua valendo.
+ * cena_fase1.js — Fase 1: "Cadê Meu Celular?" (mapa grande + fazendinha)
+ * Vários pombos idênticos, só UM com o celular. Aliens da ressaca vagueiam
+ * (encostar = game over; perto = sobe a alucinação). No fundo do mapa há
+ * FAZENDINHAS com vacas sendo ABDUZIDAS por discos voadores. Tem também o
+ * cachorro (late) e o "Seu Zé" (NPC que fala) como easter eggs.
  * ========================================================================= */
 window.Jogo = window.Jogo || {};
 Jogo.Cenas = Jogo.Cenas || {};
 
 Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
   const R = Jogo.R, C = Jogo.CONFIG, P = C.d2.player, PB = C.d2.pombo, FE = C.d2.fase1Extra;
-  const mundo = { x0: -420, x1: 420, y0: -620, y1: 560 };
+  const mundo = { x0: -760, x1: 760, y0: -980, y1: 780 };
 
-  const joao = { x: 0, y: 320, t: 0, andando: false, flip: false };
+  const joao = { x: 0, y: 560, t: 0, andando: false, flip: false };
 
-  // vários pombos idênticos; só 1 carrega o celular (escondido = difícil)
-  const posicoes = [[70, 150], [-180, -40], [210, -260], [-280, 240], [260, 180], [-80, -380], [120, 420], [-330, -200]];
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function pv(o) {   // pan/vol posicional p/ áudio
+    const d = Math.hypot(o.x - joao.x, o.y - joao.y);
+    return { pan: clamp((o.x - joao.x) / 420, -1, 1), vol: Math.max(0.12, Math.min(1, 1 - d / (o.raio * 1.2))) };
+  }
+
+  // ---- pombos (1 com o celular) ----
+  const posic = [[120, 240], [-260, 60], [320, -160], [-360, 320], [380, 360], [-120, -260], [220, 540], [-460, -120], [60, -420], [480, 120]];
   const pombos = [];
   for (let i = 0; i < FE.quantos; i++) {
-    const sp = posicoes[i % posicoes.length];
-    pombos.push({ x: sp[0], y: sp[1], t: Math.random() * 6, dir: -1, heading: Math.random() * 6.28, troca: 0,
-                  vivo: true, temCelular: false, foraDeCena: false });
+    const sp = posic[i % posic.length];
+    pombos.push({ x: sp[0] + rnd(-30, 30), y: sp[1] + rnd(-30, 30), t: Math.random() * 6, dir: -1, heading: Math.random() * 6.28, troca: 0, vivo: true, temCelular: false, foraDeCena: false });
   }
   pombos[Math.floor(Math.random() * pombos.length)].temCelular = true;
 
@@ -32,18 +38,55 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
     aoSurtar: () => perder('surto'),
   });
 
-  // cenário estático
+  // ---- cenário: prédios da cidade (em cima) + casas/árvores (mapa todo) ----
   const predios = [
-    [-420, -560, 150, 240, '#c46b9e'], [-420, -260, 150, 200, '#7e6bd0'],
-    [270, -520, 150, 220, '#5b8dd6'], [270, -240, 150, 240, '#e0a14f'],
-    [-420, 120, 150, 220, '#6bb0c4'], [270, 140, 150, 200, '#c4796b'],
+    [-740, -940, 160, 260, '#c46b9e'], [-540, -960, 150, 230, '#7e6bd0'], [-330, -940, 150, 250, '#5b8dd6'],
+    [300, -960, 160, 260, '#e0a14f'], [500, -940, 160, 240, '#6bb0c4'], [-120, -980, 180, 200, '#c4796b'],
+    [-740, -640, 150, 220, '#8a6bd0'], [560, -640, 150, 220, '#d0796b'],
   ];
-  const arvores = [[-150, 180], [150, 220], [-200, -180], [180, -120], [-120, 420]];
+  const casas = [   // [x, y, cor]
+    [-560, 360, '#caa15a'], [-360, 520, '#b07a4a'], [520, 520, '#a6b06a'],
+    [620, -120, '#caa15a'], [-660, 60, '#9a8acb'], [340, 200, '#b9926a'],
+  ];
+  const arvores = [[-200, 200], [200, 260], [-300, -120], [260, -60], [-180, 460], [420, 440], [-520, 220], [560, 280], [-80, 40], [120, -200], [-420, 520], [620, 360]];
+  const bancos = [[-60, 300], [180, 420], [-300, 140]];
 
-  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  // ---- duas fazendinhas com abdução ----
+  function criarFazenda(cx, cy) {
+    const cows = [];
+    for (let i = 0; i < 3; i++) cows.push({ x: cx - 90 + i * 90 + rnd(-12, 12), y: cy + rnd(-26, 26), abduz: 0 });
+    const nv = { x: cx, y: cy - 210, t: Math.random() * 5, alvo: -1, beam: 0, espera: 1 + Math.random() * 3 };
+    function update(dt) {
+      nv.t += dt;
+      if (nv.alvo < 0) {
+        nv.beam = Math.max(0, nv.beam - dt * 2);
+        nv.x += Math.sin(nv.t * 0.5) * 26 * dt;
+        nv.espera -= dt;
+        if (nv.espera <= 0) { nv.alvo = Math.floor(Math.random() * cows.length); }
+      } else {
+        const cow = cows[nv.alvo];
+        nv.x += (cow.x - nv.x) * Math.min(1, 2.4 * dt);
+        if (Math.abs(nv.x - cow.x) < 8) { nv.beam = Math.min(1, nv.beam + dt * 2.5); cow.abduz = Math.min(1, cow.abduz + dt * 0.45); }
+        if (cow.abduz >= 1) { cow.abduz = 0; cow.x = cx + rnd(-130, 130); cow.y = cy + rnd(-26, 26); nv.alvo = -1; nv.espera = 2 + Math.random() * 3; }
+      }
+      nv.x = clamp(nv.x, cx - 150, cx + 150);
+    }
+    function partes() {
+      const arr = [];
+      cows.forEach((c) => arr.push({ y: c.y, f: () => R.vaca(c.x, c.y, { t: nv.t, abduz: c.abduz }) }));
+      arr.push({ y: nv.y + 200, f: () => R.nave(nv.x, nv.y, { t: nv.t, beam: nv.beam, beamLen: (cy - nv.y) + 24 }) });
+      return arr;
+    }
+    return { cx, cy, update, partes };
+  }
+  const fazendas = [criarFazenda(-520, -360), criarFazenda(520, -380)];
+
+  // ---- easter eggs: cachorro + Seu Zé ----
+  const dog = { x: 260, y: 600, t: 0, dir: -1, raio: 150, cd: 1.5, timer: 0, falando: false, _h: null };
+  const ze = { x: -240, y: 620, t: 0, raio: 150, cd: 1.2, falando: false, _h: null };
 
   function update(dt) {
-    joao.t += dt;
+    joao.t += dt; dog.t += dt; ze.t += dt;
 
     // ---- João ----
     const e = Jogo.Input.eixo();
@@ -60,18 +103,16 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
       if (joao._ps <= 0) { Jogo.Audio.sfx('passo'); joao._ps = correndo ? 0.26 : 0.4; }
     } else joao.andando = false;
 
-    // ---- Pombos ----
+    // ---- pombos ----
     for (const p of pombos) {
       if (!p.vivo) continue;
       p.t += dt;
-
-      if (p.foraDeCena) {  // pombo errado fugindo de vez
+      if (p.foraDeCena) {
         p.x += Math.cos(p.heading) * PB.fuga * 1.4 * dt;
         p.y += Math.sin(p.heading) * PB.fuga * 1.4 * dt;
-        if (!R.noVisor(p.x, p.y, 80)) p.vivo = false;
+        if (!R.noVisor(p.x, p.y, 90)) p.vivo = false;
         continue;
       }
-
       const toX = p.x - joao.x, toY = p.y - joao.y;
       const dist = Math.hypot(toX, toY) || 1;
       if (dist < PB.raioPanico) {
@@ -92,27 +133,43 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
       if (p.y < mundo.y0 || p.y > mundo.y1) p.heading = -p.heading;
       p.x = clamp(p.x, mundo.x0, mundo.x1);
       p.y = clamp(p.y, mundo.y0, mundo.y1);
-
-      if (dist < PB.raioCaptura) {
-        if (p.temCelular) { vencer(); return; }
-        else pombaErrada(p);
-      }
+      if (dist < PB.raioCaptura) { if (p.temCelular) { vencer(); return; } else pombaErrada(p); }
     }
 
-    // ---- aliens + alucinação ----
+    // ---- fazendas ----
+    fazendas.forEach((f) => f.update(dt));
+
+    // ---- aliens + alucinação + vozes ----
     aliens.update(dt, joao);
+
+    // ---- cachorro (late ao chegar perto) ----
+    dog.cd -= dt;
+    if (dog.timer > 0) { dog.timer -= dt; if (dog.timer <= 0) dog.falando = false; const d = pv(dog); if (dog._h && dog._h.setPan) { dog._h.setPan(d.pan); dog._h.setVol(d.vol); } }
+    if (dog.cd <= 0 && Math.hypot(dog.x - joao.x, dog.y - joao.y) < dog.raio) {
+      const d = pv(dog); dog._h = Jogo.Audio.tocarSom('cachorro', { pan: d.pan, vol: d.vol });
+      dog.cd = 6; dog.timer = 2.4; dog.falando = true;
+    }
+
+    // ---- Seu Zé (fala usando o canal único de voz, igual aos ETs) ----
+    ze.cd -= dt;
+    if (ze._h) {
+      const d = pv(ze); ze._h.setPan(d.pan); ze._h.setVol(d.vol);
+      if (!Jogo.Audio.vozOcupada()) { ze._h = null; ze.falando = false; ze.cd = 2 + Math.random() * 2; }
+    } else if (ze.cd <= 0 && Math.hypot(ze.x - joao.x, ze.y - joao.y) < ze.raio && !Jogo.Audio.vozOcupada()) {
+      const d = pv(ze); const h = Jogo.Audio.tocarVoz('seu_ze', { pan: d.pan, vol: d.vol });
+      if (h) { ze._h = h; ze.falando = true; } else ze.cd = 0.4;
+    }
 
     // ---- cronômetro de fôlego ----
     est.tempo -= dt;
     Jogo.UI.timer(est.tempo);
     if (est.tempo <= 0) {
       est.tempo = C.d2.fase1Tempo;
-      joao.x = 0; joao.y = 320;
+      joao.x = 0; joao.y = 560;
       Jogo.Audio.sfx('derrota');
       Jogo.UI.balao(C.txt.fase1.cansou, 2600);
     }
 
-    // câmera segue o João
     R.cam.x += (joao.x - R.cam.x) * Math.min(1, 7 * dt);
     R.cam.y += (joao.y - R.cam.y) * Math.min(1, 7 * dt);
   }
@@ -120,7 +177,7 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
   function pombaErrada(p) {
     if (p.foraDeCena) return;
     p.foraDeCena = true;
-    p.heading = Math.atan2(p.y - joao.y, p.x - joao.x);   // foge para longe do João
+    p.heading = Math.atan2(p.y - joao.y, p.x - joao.x);
     Jogo.Audio.sfx('pombo');
     const l = C.txt.fase1.errado;
     Jogo.UI.balao(l[Math.floor(Math.random() * l.length)], 2200);
@@ -130,6 +187,7 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
     if (est.venceu || est.perdeu) return;
     est.venceu = true; est.ativo = false;
     Jogo.UI.timer(null); Jogo.UI.dica(null); Jogo.UI.alucinacao(null);
+    aliens.parar();
     Jogo.Audio.sfx('captura'); Jogo.Audio.sfx('vitoria');
     Jogo.UI.balao(C.txt.fase1.vitoria, 3200);
     setTimeout(aoConcluir, 2600);
@@ -139,25 +197,47 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
     if (est.perdeu || est.venceu) return;
     est.perdeu = true; est.ativo = false;
     Jogo.UI.timer(null); Jogo.UI.dica(null);
+    aliens.parar();
     if (aoPerder) aoPerder(motivo);
+  }
+
+  function desenharCasa(x, y, cor) {
+    R.ret(x - 55, y - 70, 110, 78, cor, 6);
+    const c = R.ctx();
+    c.fillStyle = '#8a3a3a';
+    c.beginPath(); c.moveTo(R.sx(x - 64), R.sy(y - 70)); c.lineTo(R.sx(x), R.sy(y - 116)); c.lineTo(R.sx(x + 64), R.sy(y - 70)); c.closePath(); c.fill();
+    R.ret(x - 14, y - 40, 28, 40, '#5a3a1b', 4);
+    R.ret(x - 44, y - 56, 24, 22, '#bfe6ff', 3); R.ret(x + 22, y - 56, 24, 22, '#bfe6ff', 3);
+  }
+  function desenharFazendaFundo(f) {
+    R.ret(f.cx - 180, f.cy - 70, 360, 150, '#7a9e54', 14);       // grama
+    const c = R.ctx(); c.strokeStyle = '#caa15a'; c.lineWidth = 4;
+    for (let px = f.cx - 170; px <= f.cx + 170; px += 40) { c.beginPath(); c.moveTo(R.sx(px), R.sy(f.cy + 78)); c.lineTo(R.sx(px), R.sy(f.cy + 60)); c.stroke(); }
+    c.beginPath(); c.moveTo(R.sx(f.cx - 174), R.sy(f.cy + 70)); c.lineTo(R.sx(f.cx + 174), R.sy(f.cy + 70)); c.stroke();
   }
 
   function draw(ctx) {
     R.piso(C.cores.chaoPraca);
     R.pontilhado('rgba(255,255,255,0.05)', 70);
-    R.faixa(-80, mundo.y0, 160, mundo.y1 - mundo.y0 + 80, C.cores.caminhoPraca);
+    R.faixa(-90, mundo.y0, 180, mundo.y1 - mundo.y0 + 80, C.cores.caminhoPraca);   // avenida vertical
+    R.faixa(mundo.x0, -40, mundo.x1 - mundo.x0 + 80, 150, C.cores.caminhoPraca);   // rua horizontal
+    fazendas.forEach(desenharFazendaFundo);
 
     const lista = [];
-    lista.push({ y: mundo.y0 + 90, f: () => { R.predio(-110, mundo.y0 - 40, 220, 130, '#3a2a1a'); desenharLetreiroBar(ctx, 0, mundo.y0 - 60); } });
+    lista.push({ y: mundo.y0 + 120, f: () => { R.predio(-120, mundo.y0 - 20, 240, 130, '#3a2a1a'); desenharLetreiroBar(ctx, 0, mundo.y0 - 40); } });
     predios.forEach((p) => lista.push({ y: p[1] + p[3], f: () => R.predio(p[0], p[1], p[2], p[3], p[4]) }));
+    casas.forEach((h) => lista.push({ y: h[1], f: () => desenharCasa(h[0], h[1], h[2]) }));
     arvores.forEach((a) => lista.push({ y: a[1], f: () => R.arvore(a[0], a[1]) }));
-    lista.push({ y: 200, f: () => R.banco(-60, 200) });
+    bancos.forEach((b) => lista.push({ y: b[1], f: () => R.banco(b[0], b[1]) }));
+    fazendas.forEach((f) => f.partes().forEach((d) => lista.push(d)));
     pombos.forEach((p) => { if (p.vivo) lista.push({ y: p.y, f: () => R.pombo(p.x, p.y, { t: p.t, dir: p.dir, hop: PB.hop, hopFreq: PB.hopFreq }) }); });
     aliens.desenhos().forEach((d) => lista.push(d));
+    lista.push({ y: dog.y, f: () => { R.cachorro(dog.x, dog.y, { t: dog.t, dir: dog.dir }); if (dog.falando) R.iconeVoz(dog.x, dog.y - 44, dog.t); } });
+    lista.push({ y: ze.y, f: () => { R.pessoa(ze.x, ze.y, { t: ze.t, andando: false, flip: true, cor: '#9a8a6a' }); R.nomeNPC(ze.x, ze.y - 74, 'Seu Zé', '#ffd23f'); if (ze.falando) R.iconeVoz(ze.x, ze.y - 104, ze.t); } });
     lista.push({ y: joao.y, f: () => R.pessoa(joao.x, joao.y, { t: joao.t, andando: joao.andando, flip: joao.flip, cor: '#3b82d6' }) });
     lista.sort((a, b) => a.y - b.y).forEach((d) => d.f());
 
-    aliens.efeito();   // alucinação por cima de tudo
+    aliens.efeito();
   }
 
   function desenharLetreiroBar(ctx, x, y) {
@@ -165,14 +245,13 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
     ctx.save();
     ctx.fillStyle = 'rgba(20,12,30,0.9)';
     ctx.strokeStyle = '#ff5fae'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.rect(X - 70, Y - 26, 140, 40); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#ffd23f'; ctx.font = 'bold 24px Trebuchet MS, sans-serif';
+    ctx.beginPath(); ctx.rect(X - 80, Y - 26, 160, 40); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ffd23f'; ctx.font = 'bold 18px "PressStart", monospace';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('BAR DO ZÉ', X, Y - 5);
+    ctx.fillText('BAR DO ZÉ', X, Y - 4);
     ctx.restore();
   }
 
-  // música + objetivo + intro
   Jogo.Audio.tocarMusica('f1');
   Jogo.UI.objetivo(C.txt.fase1.objetivo);
   Jogo.UI.dica(C.txt.fase1.dica);
@@ -186,6 +265,6 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
     get ativo() { return est.ativo; },
     update, draw,
     _dbg: { vencer, perder },
-    dispose() { Jogo.Input.mostrarToque(false); },
+    dispose() { aliens.parar(); Jogo.Input.mostrarToque(false); },
   };
 };

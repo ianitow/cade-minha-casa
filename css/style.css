@@ -14,7 +14,7 @@ html, body {
   width: 100%; height: 100%;
   overflow: hidden;
   background: #000;
-  font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--fontTexto, 'Courier New', monospace);
   color: #fff;
   -webkit-user-select: none; user-select: none;
 }
@@ -48,24 +48,25 @@ html, body {
 }
 #objetivo {
   background: var(--painel);
-  border: 2px solid var(--amarelo);
-  border-radius: 12px;
-  padding: 10px 16px;
-  font-size: clamp(14px, 2.4vw, 20px);
-  font-weight: bold;
+  border: 3px solid var(--amarelo);
+  border-radius: 4px;
+  padding: 10px 14px;
+  font-family: var(--fontTexto);
+  font-size: clamp(17px, 3vw, 26px);
+  line-height: 1.15;
   max-width: 68%;
-  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+  box-shadow: 0 0 0 2px #1a1226, 0 4px 14px rgba(0,0,0,.5);
 }
-#hudDireita { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+#hudDireita { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 #timer, #contador {
   background: var(--painel);
-  border: 2px solid #fff;
-  border-radius: 12px;
-  padding: 10px 14px;
-  font-size: clamp(14px, 2.4vw, 20px);
-  font-weight: bold;
+  border: 3px solid #fff;
+  border-radius: 4px;
+  padding: 9px 12px;
   font-variant-numeric: tabular-nums;
 }
+#timer { font-family: var(--fontTitulo); font-size: clamp(10px, 2vw, 15px); }
+#contador { font-family: var(--fontTexto); font-size: clamp(15px, 2.6vw, 22px); }
 #timer.urgente { border-color: #ff4d4d; color: #ff4d4d; animation: pisca .5s steps(2) infinite; }
 @keyframes pisca { 50% { opacity: .35; } }
 
@@ -73,22 +74,21 @@ html, body {
 #alucinacao {
   display: flex; align-items: center; gap: 6px;
   background: var(--painel);
-  border: 2px solid #fff;
-  border-radius: 12px;
-  padding: 8px 12px;
+  border: 3px solid #fff;
+  border-radius: 4px;
+  padding: 7px 10px;
 }
-#alucinacao .medLabel { font-size: clamp(13px, 2.4vw, 18px); line-height: 1; }
+#alucinacao .medLabel { font-size: clamp(14px, 2.4vw, 18px); line-height: 1; }
 #alucTrilho {
   width: clamp(70px, 18vw, 130px);
-  height: clamp(10px, 2.6vw, 16px);
-  border-radius: 8px;
+  height: clamp(12px, 2.6vw, 18px);
+  border-radius: 2px;
   background: rgba(0,0,0,.5);
   overflow: hidden;
 }
 #alucBarra {
   height: 100%; width: 0%;   /* largura = nível, sobrescrita via JS */
   background: #7be07b;        /* cor por nível, sobrescrita via JS */
-  border-radius: 8px;
   transition: width .12s linear, background .2s linear;
 }
 #alucinacao.alerta { border-color: #ff4d4d; animation: pisca .5s steps(2) infinite; }
@@ -102,16 +102,16 @@ html, body {
   text-align: center;
 }
 #chefeHPNome {
-  font-weight: bold;
-  font-size: clamp(13px, 2.6vw, 20px);
+  font-family: var(--fontTitulo);
+  font-size: clamp(10px, 2.2vw, 16px);
   color: #bdf0ff;
   text-shadow: 2px 2px 0 #000;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 #chefeHPFora {
-  height: clamp(14px, 3vw, 22px);
-  border: 2px solid #fff;
-  border-radius: 12px;
+  height: clamp(16px, 3vw, 24px);
+  border: 3px solid #fff;
+  border-radius: 4px;
   overflow: hidden;
   background: rgba(0,0,0,.45);
 }
@@ -125,8 +125,8 @@ html, body {
   pointer-events: auto;
   cursor: pointer;
   background: var(--painel);
-  border: 2px solid #fff;
-  border-radius: 12px;
+  border: 3px solid #fff;
+  border-radius: 4px;
   padding: 8px 12px;
   font-size: 20px;
   color: #fff;
@@ -138,10 +138,11 @@ html, body {
   bottom: 26px; left: 50%;
   transform: translateX(-50%);
   background: var(--painel);
-  border: 2px solid var(--amarelo);
-  border-radius: 30px;
-  padding: 10px 22px;
-  font-size: clamp(13px, 2.2vw, 18px);
+  border: 3px solid var(--amarelo);
+  border-radius: 4px;
+  padding: 9px 20px;
+  font-family: var(--fontTexto);
+  font-size: clamp(16px, 2.6vw, 22px);
   text-align: center;
   animation: flutua 1.6s ease-in-out infinite;
 }
@@ -153,13 +154,14 @@ html, body {
   transform: translateX(-50%);
   background: #fff;
   color: #1a1226;
-  border-radius: 16px;
-  padding: 14px 22px;
-  font-size: clamp(14px, 2.4vw, 19px);
-  font-weight: bold;
+  border: 3px solid #1a1226;
+  border-radius: 4px;
+  padding: 12px 20px;
+  font-family: var(--fontTexto);
+  font-size: clamp(17px, 2.8vw, 23px);
   text-align: center;
-  max-width: 80%;
-  box-shadow: 0 8px 20px rgba(0,0,0,.5);
+  max-width: 84%;
+  box-shadow: 0 6px 0 rgba(0,0,0,.35);
   animation: surge .25s ease;
 }
 #balao::after {
@@ -185,17 +187,20 @@ html, body {
 }
 .loadBox { text-align: center; padding: 24px; }
 .loadTitulo {
-  font-size: clamp(28px, 7vw, 56px);
+  font-family: var(--fontTitulo);
+  font-size: clamp(15px, 4.4vw, 30px);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
   color: var(--amarelo);
   text-shadow: 3px 3px 0 #000, 0 0 20px rgba(255,210,63,.4);
-  margin-bottom: 10px;
+  margin-bottom: 16px;
 }
-#loadTexto { opacity: .85; margin-bottom: 18px; font-size: clamp(14px,3vw,18px); }
+#loadTexto { opacity: .85; margin-bottom: 18px; font-size: clamp(16px,3.4vw,22px); }
 .barraFora {
   width: min(360px, 80vw);
-  height: 18px;
-  border: 2px solid #fff;
-  border-radius: 10px;
+  height: 20px;
+  border: 3px solid #fff;
+  border-radius: 4px;
   overflow: hidden;
   margin: 0 auto;
   background: rgba(0,0,0,.4);
@@ -236,33 +241,37 @@ html, body {
   display: flex;
   align-items: flex-end;
   gap: clamp(10px, 2.5vw, 18px);
-  background: linear-gradient(180deg, rgba(28,18,42,0.96), rgba(14,8,24,0.96));
-  border: 3px solid var(--amarelo);
-  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(28,18,42,0.97), rgba(14,8,24,0.97));
+  border: 4px solid var(--amarelo);
+  border-radius: 6px;
   padding: clamp(12px, 2.5vw, 20px);
-  box-shadow: 0 10px 30px rgba(0,0,0,.6);
+  box-shadow: 0 0 0 3px #1a1226, 0 10px 30px rgba(0,0,0,.7);
   animation: surge .25s ease;
 }
 .caixaDialogo .retrato {
   flex: 0 0 auto;
   width: clamp(64px, 18vw, 120px);
   height: clamp(64px, 18vw, 120px);
-  border-radius: 14px;
+  border-radius: 4px;
+  border: 3px solid rgba(255,255,255,.85);
+  image-rendering: pixelated;
 }
 .dlgCorpo { flex: 1 1 auto; min-width: 0; text-align: left; }
 .nomeRetrato {
+  font-family: var(--fontTitulo);
   color: var(--amarelo);
-  font-weight: bold;
-  font-size: clamp(15px, 3vw, 22px);
-  margin-bottom: 6px;
+  font-size: clamp(11px, 2.4vw, 16px);
+  margin-bottom: 10px;
   text-shadow: 2px 2px 0 #000;
 }
 .dlgTxt {
-  font-size: clamp(15px, 3.2vw, 23px);
-  line-height: 1.45;
-  min-height: 2.9em;          /* evita "pulo" do layout enquanto digita */
+  font-family: var(--fontTexto);
+  font-size: clamp(18px, 3.6vw, 27px);
+  line-height: 1.3;
+  min-height: 2.6em;          /* evita "pulo" do layout enquanto digita */
   margin: 0;
 }
+.dlgTxt b { color: var(--amarelo); }   /* destaque padrão do markup */
 #overlay.dialogo .dicaOverlay { margin-top: 12px; text-align: right; }
 
 @media (max-width: 420px) {
@@ -273,25 +282,29 @@ html, body {
 
 .painelOverlay { max-width: 760px; animation: surge .35s ease; }
 .painelOverlay h1 {
-  font-size: clamp(32px, 8vw, 64px);
+  font-family: var(--fontTitulo);
+  font-size: clamp(16px, 4.6vw, 32px);
   color: var(--amarelo);
   text-shadow: 4px 4px 0 #000, 0 0 24px rgba(255,210,63,.45);
-  margin-bottom: 8px;
-  line-height: 1.05;
+  margin-bottom: 16px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 .painelOverlay h2 {
-  font-size: clamp(18px, 3.4vw, 26px);
-  margin-bottom: 14px;
+  font-family: var(--fontTitulo);
+  font-size: clamp(14px, 3vw, 22px);
+  line-height: 1.4;
+  margin-bottom: 16px;
   color: #fff;
 }
-.painelOverlay .sub { opacity: .8; margin-bottom: 26px; font-size: clamp(14px,2.8vw,18px); }
+.painelOverlay .sub { opacity: .85; margin-bottom: 26px; font-size: clamp(17px,3.2vw,24px); }
 .painelOverlay p.linha {
-  font-size: clamp(16px, 3.2vw, 24px);
-  line-height: 1.5;
+  font-size: clamp(18px, 3.4vw, 28px);
+  line-height: 1.35;
   margin: 0 auto 10px;
   max-width: 640px;
 }
-.dicaOverlay { margin-top: 22px; opacity: .65; font-size: clamp(12px,2.4vw,15px); }
+.dicaOverlay { margin-top: 22px; opacity: .7; font-family: var(--fontTitulo); font-size: clamp(9px,2vw,13px); }
 
 .btnGrande {
   pointer-events: auto;
@@ -299,11 +312,11 @@ html, body {
   margin-top: 22px;
   background: var(--amarelo);
   color: #1a1226;
-  border: none;
-  border-radius: 40px;
-  padding: 16px 44px;
-  font-size: clamp(18px, 3.4vw, 26px);
-  font-weight: bold;
+  border: 3px solid #1a1226;
+  border-radius: 4px;
+  padding: 16px 36px;
+  font-family: var(--fontTitulo);
+  font-size: clamp(12px, 2.6vw, 18px);
   box-shadow: 0 6px 0 #b8951f, 0 10px 20px rgba(0,0,0,.4);
   transition: transform .08s ease, box-shadow .08s ease;
 }
@@ -314,12 +327,12 @@ html, body {
 .btnGrande.secundario {
   background: transparent;
   color: #fff;
-  border: 2px solid rgba(255,255,255,.5);
+  border: 3px solid rgba(255,255,255,.5);
   box-shadow: none;
   margin-left: 12px;
-  padding: 14px 32px;
+  padding: 14px 26px;
 }
 .btnGrande.secundario:hover { border-color: var(--amarelo); transform: translateY(-2px); }
 .btnGrande.secundario:active { transform: translateY(2px); box-shadow: none; }
 
-.creditos { margin-top: 30px; font-size: 12px; opacity: .5; }
+.creditos { margin-top: 30px; font-family: var(--fontTitulo); font-size: 9px; line-height: 1.6; opacity: .5; }

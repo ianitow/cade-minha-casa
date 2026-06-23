@@ -127,7 +127,7 @@ Jogo.Cenas.fase3 = function (aoConcluir, aoPerder) {
 
   return {
     get ativo() { return est.ativo; },
-    update, draw, _dbg: { vencer },
-    dispose() { desinscrever(); Jogo.Input.mostrarToque(false); },
+    update, draw, _dbg: { vencer, perder },
+    dispose() { desinscrever(); aliens.parar(); Jogo.Input.mostrarToque(false); },
   };
 };

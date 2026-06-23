@@ -117,6 +117,47 @@ Jogo.UI = (function () {
   // ---- DIÁLOGO estilo RPG (retrato + typewriter; clique/Espaço completa/avança) ----
   function normLinha(l) { return (typeof l === 'string') ? { quem: 'narrador', txt: l } : l; }
 
+  /* markup simples de cor/negrito:
+   *   **texto**  → negrito amarelo (destaque padrão)
+   *   [a]..[/]   → cores: a amarelo, r vermelho, v verde, b azul, o laranja, p roxo, w branco */
+  const CORES_MK = { a: '#ffd23f', r: '#ff6b6b', v: '#7be07b', b: '#54d0ff', o: '#ff8c29', p: '#c47bff', w: '#ffffff' };
+  function escHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function parseSegs(txt) {
+    const segs = [];
+    let i = 0;
+    while (i < txt.length) {
+      if (txt[i] === '*' && txt[i + 1] === '*') {
+        const end = txt.indexOf('**', i + 2);
+        if (end !== -1) { segs.push({ text: txt.slice(i + 2, end), color: '#ffd23f', bold: true }); i = end + 2; continue; }
+      }
+      if (txt[i] === '[' && txt[i + 2] === ']' && CORES_MK[txt[i + 1]]) {
+        const end = txt.indexOf('[/]', i + 3);
+        if (end !== -1) { segs.push({ text: txt.slice(i + 3, end), color: CORES_MK[txt[i + 1]], bold: true }); i = end + 3; continue; }
+      }
+      let j = i;
+      while (j < txt.length) {
+        if (txt[j] === '*' && txt[j + 1] === '*') break;
+        if (txt[j] === '[' && txt[j + 2] === ']' && CORES_MK[txt[j + 1]]) break;
+        j++;
+      }
+      segs.push({ text: txt.slice(i, j), color: null, bold: false }); i = j;
+    }
+    return segs;
+  }
+  function segsLen(segs) { let n = 0; for (const s of segs) n += s.text.length; return n; }
+  function htmlAte(segs, n) {
+    let out = '', count = 0;
+    for (const s of segs) {
+      if (count >= n) break;
+      const take = Math.min(s.text.length, n - count);
+      const piece = escHtml(s.text.slice(0, take));
+      count += take;
+      if (s.color || s.bold) out += '<span style="color:' + (s.color || 'inherit') + ';font-weight:' + (s.bold ? 'bold' : 'normal') + '">' + piece + '</span>';
+      else out += piece;
+    }
+    return out;
+  }
+
   function dialogo(linhas, aoFim) {
     const C = Jogo.CONFIG;
     limparOverlay();
@@ -139,11 +180,12 @@ Jogo.UI = (function () {
     const elTxt = caixa.querySelector('.dlgTxt');
 
     const vel = (C && C.txt.dlgVel) || 45;   // chars/seg
-    let i = 0, pos = 0, digitando = false, ultimoT = 0, txtAtual = '', somAcc = 0;
+    let i = 0, pos = 0, digitando = false, ultimoT = 0, segs = [], total = 0, somAcc = 0;
 
     function mostrarLinha(n) {
       const linha = normLinha(linhas[n]);
-      txtAtual = linha.txt || '';
+      segs = parseSegs(linha.txt || '');
+      total = segsLen(segs);
       const quem = linha.quem || 'narrador';
       // retrato
       Jogo.Retratos.desenhar(ctx2d, quem, cv.width, cv.height);
@@ -152,7 +194,7 @@ Jogo.UI = (function () {
       elNome.textContent = nome;
       elNome.style.display = nome ? 'block' : 'none';
       // typewriter
-      pos = 0; digitando = true; somAcc = 0; elTxt.textContent = '';
+      pos = 0; digitando = true; somAcc = 0; elTxt.innerHTML = '';
       ultimoT = 0;
       if (dialogoRaf) cancelAnimationFrame(dialogoRaf);
       dialogoRaf = requestAnimationFrame(tick);
@@ -162,19 +204,19 @@ Jogo.UI = (function () {
       if (!ultimoT) ultimoT = t;
       const dt = (t - ultimoT) / 1000; ultimoT = t;
       pos += vel * dt;
-      const n = Math.min(txtAtual.length, Math.floor(pos));
-      elTxt.textContent = txtAtual.slice(0, n);
+      const n = Math.min(total, Math.floor(pos));
+      elTxt.innerHTML = htmlAte(segs, n);
       // som de tecla esparso
       somAcc += vel * dt;
-      if (somAcc >= 3) { somAcc = 0; if (n < txtAtual.length) Jogo.Audio.sfx('tecla'); }
-      if (n >= txtAtual.length) { digitando = false; dialogoRaf = null; return; }
+      if (somAcc >= 3) { somAcc = 0; if (n < total) Jogo.Audio.sfx('tecla'); }
+      if (n >= total) { digitando = false; dialogoRaf = null; return; }
       dialogoRaf = requestAnimationFrame(tick);
     }
 
     function avancar() {
       if (digitando) {                 // completa a linha na hora
         if (dialogoRaf) { cancelAnimationFrame(dialogoRaf); dialogoRaf = null; }
-        elTxt.textContent = txtAtual; digitando = false; return;
+        elTxt.innerHTML = htmlAte(segs, total); digitando = false; return;
       }
       i++;
       if (i < linhas.length) mostrarLinha(i);

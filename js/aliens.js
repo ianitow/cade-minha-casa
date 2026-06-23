@@ -20,8 +20,12 @@ Jogo.Aliens = function (opts) {
   const quantos = opts.quantos != null ? opts.quantos : 3;
   const getJogador = opts.getJogador;
 
+  const vozRaio = opts.vozRaio != null ? opts.vozRaio : aura * 1.15;
+  const vozVol  = opts.vozVol != null ? opts.vozVol : 1;
+
   const aliens = [];
   let nivel = 0, perdeu = false, somT = 0;
+  let falante = null, vozHandle = null, cooldownVoz = 0.8;
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function rnd(a, b) { return a + Math.random() * (b - a); }
@@ -73,7 +77,38 @@ Jogo.Aliens = function (opts) {
     // zumbido de tensão enquanto perto
     if (pressao > 0) { somT -= dt; if (somT <= 0) { Jogo.Audio.sfx('alien'); somT = 1.1 - Math.min(0.7, pressao * 0.3); } }
     if (nivel >= 1) perder('surto');
+
+    atualizarVozes(dt, joao);
     return nivel;
+  }
+
+  // vozes dos ETs: UMA por vez, posicional (pan/vol por distância)
+  function atualizarVozes(dt, joao) {
+    cooldownVoz -= dt;
+    if (falante) {
+      const d = Math.hypot(falante.x - joao.x, falante.y - joao.y);
+      if (vozHandle) {
+        vozHandle.setPan(clamp((falante.x - joao.x) / 400, -1, 1));
+        vozHandle.setVol(Math.max(0.08, Math.min(1, 1 - d / (vozRaio * 1.25))) * vozVol);
+      }
+      if (!Jogo.Audio.vozOcupada()) { falante.falando = false; falante = null; vozHandle = null; cooldownVoz = 1.4 + Math.random() * 1.8; }
+      return;
+    }
+    if (cooldownVoz > 0 || Jogo.Audio.vozOcupada()) return;
+    let melhor = null, md = vozRaio;
+    for (const a of aliens) { const d = Math.hypot(a.x - joao.x, a.y - joao.y); if (d < md) { md = d; melhor = a; } }
+    if (!melhor) return;
+    const pan = clamp((melhor.x - joao.x) / 400, -1, 1);
+    const vol = Math.max(0.12, Math.min(1, 1 - md / (vozRaio * 1.25))) * vozVol;
+    const h = Jogo.Audio.tocarVoz(Jogo.Audio.vozAleatoria(), { pan, vol });
+    if (h) { falante = melhor; melhor.falando = true; vozHandle = h; }
+    else cooldownVoz = 0.4;
+  }
+
+  function parar() {
+    if (vozHandle) { try { vozHandle.stop(); } catch (e) {} }
+    if (falante) falante.falando = false;
+    falante = null; vozHandle = null;
   }
 
   // a água do boss (Fase 4) também alimenta ESTE medidor
@@ -88,7 +123,10 @@ Jogo.Aliens = function (opts) {
   function desenhos() {
     return aliens.map((a) => ({
       y: a.y,
-      f: () => Jogo.R.alienigena(a.x, a.y, { t: a.t, dir: a.dir, fase: a.fase }),
+      f: () => {
+        Jogo.R.alienigena(a.x, a.y, { t: a.t, dir: a.dir, fase: a.fase });
+        if (a.falando) Jogo.R.iconeVoz(a.x, a.y - 74, a.t);
+      },
     }));
   }
 
@@ -96,12 +134,13 @@ Jogo.Aliens = function (opts) {
   function efeito() { Jogo.R.efeitoAlucinacao(nivel); }
 
   function reset() {
-    perdeu = false; nivel = 0; somT = 0;
+    parar();
+    perdeu = false; nivel = 0; somT = 0; cooldownVoz = 0.8;
     aliens.length = 0; init();
   }
 
   return {
-    update, desenhos, efeito, bump, reset,
+    update, desenhos, efeito, bump, reset, parar,
     get nivel() { return nivel; },
     get perdeu() { return perdeu; },
     aliens,

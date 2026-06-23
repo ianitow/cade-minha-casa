@@ -49,6 +49,7 @@ Jogo.Game = (function () {
     // 1º limpa o estado anterior, DEPOIS constrói a nova cena
     if (cenaAtual && cenaAtual.dispose) { try { cenaAtual.dispose(); } catch (e) { console.warn(e); } }
     Jogo.Input.limparAcoes();
+    Jogo.Audio.pararLoop();
     Jogo.UI.timer(null); Jogo.UI.contador(null); Jogo.UI.dica(null);
     Jogo.UI.alucinacao(null); Jogo.UI.chefeVida(null); Jogo.UI.mostrarHUD(false);
     const nova = fabrica();
@@ -75,7 +76,10 @@ Jogo.Game = (function () {
   function perder(motivo) {
     const go = C.txt.gameover || {};
     const linhas = go[motivo] || go.padrao || ['Game over'];
-    Jogo.Audio.sfx('derrota');
+    Jogo.Audio.pararLoop();
+    if (motivo === 'capturado') Jogo.Audio.tocarSom('morte_et', { vol: 1 });   // "busquem conhecimento"
+    else if (motivo === 'surto') Jogo.Audio.tocarSom('surto', { vol: 1 });      // miau triste
+    else Jogo.Audio.sfx('derrota');
     Jogo.UI.dialogo(linhas, () => {
       Jogo.UI.telaFim({
         titulo: C.txt.gameoverTitulo,
@@ -129,7 +133,9 @@ Jogo.Game = (function () {
       cor: cores[i % cores.length], ph: Math.random() * 6, sw: 20 + Math.random() * 40,
     });
     R.cam.x = 0; R.cam.y = 0;
-    Jogo.Audio.tocarMusica('menu'); Jogo.Audio.sfx('vitoria');
+    // zerou o jogo: toca "bem amigos, terminou" e, ao fim, volta a música
+    Jogo.Audio.pararLoop(); Jogo.Audio.pararMusica();
+    Jogo.Audio.tocarSom('fim', { vol: 1, onfim: () => Jogo.Audio.tocarMusica('menu') });
     Jogo.UI.mostrarHUD(false); Jogo.Input.mostrarToque(false);
     Jogo.UI.telaFim({
       titulo: '🎉 João chegou em casa!',

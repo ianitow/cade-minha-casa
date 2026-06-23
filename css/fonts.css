@@ -1,0 +1,20 @@
+/* =========================================================================
+ * fonts.css — fontes PIXELADAS empacotadas no repo (offline, sem CDN).
+ *  - PressStart  (Press Start 2P) → títulos/HUD/nomes/botões (identidade RPG 8-bit)
+ *  - PixelBody   (VT323)          → textos longos (diálogos), legível e com acentos
+ * Ambas OFL. Arquivos em /fonts.
+ * ========================================================================= */
+@font-face {
+  font-family: 'PressStart';
+  src: url('../fonts/PressStart2P-Regular.ttf') format('truetype');
+  font-weight: normal; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'PixelBody';
+  src: url('../fonts/VT323-Regular.ttf') format('truetype');
+  font-weight: normal; font-style: normal; font-display: swap;
+}
+:root {
+  --fontTitulo: 'PressStart', 'Courier New', monospace;
+  --fontTexto:  'PixelBody', 'Courier New', monospace;
+}

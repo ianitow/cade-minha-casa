@@ -22,6 +22,7 @@ Jogo.Cenas.fase4 = function (aoConcluir, aoPerder) {
   const tiros = [];      // cervejas arremessadas: {x,y,vx,vy,t}
   let segurando = false;
   let spawnT = 0.8;
+  let bolhaCd = 0;       // cooldown p/ não empilhar o som da bolha
 
   const aliens = Jogo.Aliens({
     quantos: CF.aliens, mundo, getJogador: () => joao,
@@ -59,6 +60,7 @@ Jogo.Cenas.fase4 = function (aoConcluir, aoPerder) {
   function update(dt) {
     joao.t += dt; chefe.t += dt;
     if (chefe.hitFlash > 0) chefe.hitFlash -= dt;
+    if (bolhaCd > 0) bolhaCd -= dt;
 
     // ---- João ----
     const e = Jogo.Input.eixo();
@@ -104,7 +106,9 @@ Jogo.Cenas.fase4 = function (aoConcluir, aoPerder) {
       const w = aguas[i];
       w.t += dt; w.x += w.vx * dt; w.y += w.vy * dt;
       if (Math.hypot(w.x - joao.x, w.y - (joao.y - 22)) < CF.raioDano) {
-        aguas.splice(i, 1); Jogo.Audio.sfx('dano'); aliens.bump(CF.spike); continue;
+        aguas.splice(i, 1); Jogo.Audio.sfx('dano'); aliens.bump(CF.spike);
+        if (bolhaCd <= 0) { Jogo.Audio.tocarSom('boss_bolha', { vol: 0.9 }); bolhaCd = 0.5; }
+        continue;
       }
       if (w.x < mundo.x0 - 60 || w.x > mundo.x1 + 60 || w.y < mundo.y0 - 60 || w.y > mundo.y1 + 120) aguas.splice(i, 1);
     }
@@ -189,6 +193,6 @@ Jogo.Cenas.fase4 = function (aoConcluir, aoPerder) {
     get ativo() { return est.ativo; },
     update, draw,
     _dbg: { vencer, perder, chefe, joao, cervejas, tiros, aguas, get segurando() { return segurando; } },
-    dispose() { desinscrever(); Jogo.Input.mostrarToque(false); },
+    dispose() { desinscrever(); aliens.parar(); Jogo.Input.mostrarToque(false); },
   };
 };

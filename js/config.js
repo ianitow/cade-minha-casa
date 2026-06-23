@@ -52,7 +52,7 @@ Jogo.CONFIG = {
     pombo:  { fuga: 350, passeio: 75, raioPanico: 280, raioCaptura: 48,
               serp: 0.55, serpFreq: 5.5, hop: 11, hopFreq: 10 },
     busca:  { raio: 92 },
-    fase1Tempo: 60,
+    fase1Tempo: 120,
 
     /* ---- Aliens (alucinação da ressaca) — em TODAS as fases ----
      * passeio < player.andar (235) → sempre dá pra fugir.
@@ -60,8 +60,8 @@ Jogo.CONFIG = {
     aliens: { passeio: 90, aura: 210, captura: 40, subida: 0.5, descida: 0.3 },
 
     /* quantos aliens / pombos por fase */
-    fase1Extra: { quantos: 6, aliens: 3 },
-    fase2Aliens: 2,
+    fase1Extra: { quantos: 8, aliens: 4 },
+    fase2Aliens: 3,
     fase3Aliens: 3,
 
     /* ---- Chefe de água (Fase 4) ---- */
@@ -107,14 +107,14 @@ Jogo.CONFIG = {
 
     abertura: [
       'João acordou numa praça. A boca seca, a cabeça latejando.',
-      'Sem celular. Sem carteira. Sem chaves. Sem ideia de onde está.',
+      'Sem [b]📱 celular[/]. Sem [o]👛 carteira[/]. Sem [a]🔑 chaves[/]. Sem ideia de onde está.',
       { quem: 'joao', txt: 'Ai… minha cabeça. Que ressaca cósmica é essa?' },
-      { quem: 'joao', txt: 'Peraí… aquilo ali é… um ALIENÍGENA?! Tem VÁRIOS!' },
-      'Calma, João. São só alucinações da bebedeira. Provavelmente.',
-      { quem: 'alien', txt: 'blluuurp… 🛸' },
-      'Quanto mais perto deles você fica, mais a sua cabeça surta.',
-      'Se um encostar em você, ou se você surtar de vez… era uma vez o João.',
-      'Respira, desvia dos ETs e volta pra casa antes que o dia acabe.',
+      { quem: 'joao', txt: 'Peraí… aquilo ali é… um [v]👽 ALIENÍGENA[/]?! Tem [v]VÁRIOS[/]!' },
+      'Calma, João. São só [p]alucinações[/] da bebedeira. Provavelmente.',
+      { quem: 'alien', txt: '[v]blluuurp… 🛸[/]' },
+      'Quanto mais perto deles você fica, mais a [r]alucinação[/] sobe.',
+      'Se um [r]encostar[/] em você, ou se você [r]surtar (100%)[/]… era uma vez o João.',
+      'Respira, desvia dos [v]👽 ETs[/] e volta pra casa antes que o dia acabe.',
     ],
 
     fase1: {
@@ -122,9 +122,9 @@ Jogo.CONFIG = {
       objetivo: '🐦 Ache o pombo certo (1 de vários) e fuja dos aliens!',
       dica: 'WASD / setas para andar · SHIFT para correr · fuja dos ETs',
       intro: [
-        'Um bando de POMBOS bica algo brilhante no chão…',
-        'Um deles está com o SEU celular! Mas qual? São todos iguais!',
-        { quem: 'joao', txt: 'Encosta em cada pombo até achar o ladrão. E foge dos aliens!' },
+        'Um bando de [w]🐦 POMBOS[/] bica algo brilhante no chão…',
+        'Um deles está com o [b]SEU celular[/]! Mas qual? São todos iguais!',
+        { quem: 'joao', txt: 'Encosta em cada pombo até achar o ladrão. E foge dos [v]👽 aliens[/]!' },
       ],
       cansou: 'João ficou sem fôlego e teve que recomeçar. Maldita ressaca.',
       vitoria: 'PEGOU O CERTO! O pombo soltou o celular. 47 ligações perdidas da sua mãe.',
@@ -181,12 +181,12 @@ Jogo.CONFIG = {
     },
 
     transicao3: [
-      '🔑 Chave em mãos! João abre a porta de casa, aliviado…',
-      '…mas a sala está INUNDADA e algo gigante se ergue da água.',
-      { quem: 'chefe', txt: 'GLUB GLUB. EU SOU A SUA RESSACA EM FORMA DE ÁGUA.' },
-      { quem: 'chefe', txt: 'VOU TE HIDRATAR À FORÇA, HUMANO CAMBALEANTE!' },
-      { quem: 'joao', txt: 'Água?! NUNCA! Me dá uma cerveja que eu resolvo isso!' },
-      'Desvie dos jatos d’água, pegue as cervejas do chão e tÁque nele!',
+      '[a]🔑 Chave em mãos![/] João abre a porta de casa, aliviado…',
+      '…mas a sala está [b]INUNDADA[/] e algo gigante se ergue da água.',
+      { quem: 'chefe', txt: '[b]GLUB GLUB. EU SOU A SUA RESSACA EM FORMA DE ÁGUA.[/]' },
+      { quem: 'chefe', txt: '[b]VOU TE HIDRATAR À FORÇA, HUMANO CAMBALEANTE![/]' },
+      { quem: 'joao', txt: 'Água?! NUNCA! Me dá uma [o]🍺 cerveja[/] que eu resolvo isso!' },
+      'Desvie dos [b]💧 jatos d’água[/], pegue as [o]🍺 cervejas[/] do chão e tÁque nele!',
     ],
 
     fase4: {
@@ -194,9 +194,9 @@ Jogo.CONFIG = {
       objetivo: '🍺 Acerte cervejas no boss e desvie da água!',
       dica: 'Ande por cima da cerveja p/ pegar · [E] / botão p/ arremessar',
       intro: [
-        { quem: 'chefe', txt: 'A ÁGUA SEMPRE VENCE A CERVEJA, SEU PARDAL MOLHADO!' },
+        { quem: 'chefe', txt: '[b]A ÁGUA SEMPRE VENCE A CERVEJA, SEU PARDAL MOLHADO![/]' },
         { quem: 'joao', txt: 'Isso é o que veremos, seu aguaceiro intergaláctico!' },
-        'Pegue as cervejas no chão e arremesse no boss. Desvie da água!',
+        'Pegue as [o]🍺 cervejas[/] no chão e arremesse no boss. Desvie da [b]💧 água[/]!',
       ],
       vitoria: 'O Chefão Líquido evaporou em um “PSCHIIIU”! Você venceu a ressaca!',
     },
@@ -237,18 +237,18 @@ Jogo.CONFIG = {
     gameover: {
       // alien encostou em você
       capturado: [
-        { quem: 'alien', txt: 'peguei vc, terráqueo molenga. blluurp.' },
-        'Um alien encostou em João. Ele desmaiou de susto na calçada.',
+        { quem: 'alien', txt: '[v]peguei vc, terráqueo molenga. blluurp.[/]' },
+        'Um [v]👽 alien[/] encostou em João. Ele desmaiou de susto na calçada.',
       ],
       // medidor de alucinação chegou a 100%
       surto: [
-        { quem: 'joao', txt: 'TEM ET EM TUDO! NO POSTE! NA LIXEIRA! NO MEU SAPATO!' },
-        'João surtou completamente. A vizinhança chamou a ambulância.',
+        { quem: 'joao', txt: '[r]TEM ET EM TUDO! NO POSTE! NA LIXEIRA! NO MEU SAPATO![/]' },
+        'João [r]surtou[/] completamente. A vizinhança chamou a ambulância.',
       ],
       // levou água demais do boss
       chefe: [
-        { quem: 'chefe', txt: 'HIDRATADO! AGORA VOCÊ É 70% ÁGUA, COMO DEVE SER.' },
-        'João foi encharcado até virar poça. A cerveja chorou.',
+        { quem: 'chefe', txt: '[b]HIDRATADO! AGORA VOCÊ É 70% ÁGUA, COMO DEVE SER.[/]' },
+        'João foi [b]encharcado[/] até virar poça. A [o]🍺 cerveja[/] chorou.',
       ],
       padrao: [ 'Deu ruim. João precisa tentar de novo.' ],
     },

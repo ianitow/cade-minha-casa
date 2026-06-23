@@ -1,3 +1,6 @@
 .DS_Store
 Thumbs.db
 *.log
+
+# áudio grande não usado no jogo
+input.mp3

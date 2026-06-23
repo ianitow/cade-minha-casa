@@ -18,9 +18,19 @@ HUD) — chegou a **100%**, João surta e você perde. Ao perder, dá pra **tent
 de novo a mesma fase**. As mensagens da história são em **estilo RPG** (retrato
 do personagem + texto datilografado).
 
-Feito com **HTML + CSS + JavaScript puro** (Canvas 2D). **Sem bibliotecas, sem build,
-sem downloads.** Áudio (efeitos + música chiptune) e todos os personagens
-(inclusive aliens e o boss) são gerados por código — nenhuma imagem.
+Feito com **HTML + CSS + JavaScript puro** (Canvas 2D). **Sem bibliotecas, sem build.**
+Os personagens (inclusive aliens e o boss) são desenhados por código — nenhuma imagem.
+Visual **pixelado** (fontes 8-bit) e diálogos estilo **RPG** (retrato + typewriter,
+com **negrito, cores e ícones**).
+
+### Áudio & easter eggs
+Além dos efeitos/chiptune gerados por código, há vozes e memes em **MP3** (pasta `audio/`):
+- **Vozes dos ETs** (`et_*`) tocam ao você se aproximar — **uma de cada vez**, com **som posicional** (esquerda/direita + volume por distância) e um **ícone de fala** sobre o ET que está falando.
+- **Cachorro** late (`animals`) e o **NPC "Seu Zé"** fala (`eu-finjo…`) ao chegar perto.
+- **Fase 1:** discos voadores **abduzindo vacas** nas fazendinhas.
+- **Fase 2:** ETs surgem por **portais** e a carteira só aparece nas **últimas buscas**; toca **dexter** em loop.
+- **Morte por ET:** `busquem_conhecimento` (captura) ou `miau-triste` (surto). **Bolha do boss:** `vinheta-xaropinho`.
+- **Ao zerar:** toca `bem-amigos-terminou` e a música volta em seguida.
 
 ## Como rodar
 
@@ -71,5 +81,9 @@ Os emojis aparecem só no HUD em HTML (objetivos, telas), onde o navegador os re
 - Velocidades e dificuldade: `js/config.js` → bloco `d2` (`player`, `pombo`, `busca`, `fase1Tempo`).
 - **Aliens / alucinação:** `js/config.js` → `d2.aliens` (`passeio`, `aura`, `captura`, `subida`, `descida`) e quantidade por fase (`fase1Extra.aliens`, `fase2Aliens`, `fase3Aliens`).
 - **Boss (Fase 4):** `js/config.js` → `d2.chefe` (vida, cadência dos jatos, velocidades, dano da água).
-- Textos e piadas: `js/config.js` → bloco `txt` (diálogos RPG aceitam `{ quem, txt }`).
+- Textos e piadas: `js/config.js` → bloco `txt` (diálogos RPG aceitam `{ quem, txt }` e markup de cor `[a]…[/]`, `**negrito**`).
 - O pombo certo (Fase 1), a carteira (Fase 2) e a chave (Fase 3) ficam **sorteados** a cada partida.
+
+## Créditos
+- Fontes pixeladas (em `fonts/`, licença **OFL**): **Press Start 2P** e **VT323** (Google Fonts).
+- Áudios em `audio/` são memes/efeitos usados como easter eggs.

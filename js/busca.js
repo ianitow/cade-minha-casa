@@ -11,7 +11,10 @@ Jogo.Busca = function (opts) {
   const itens = opts.itens;          // [{ x, y, nome, contem, revistado:false }]
   const total = itens.length;
   let revistados = 0;
-  const itemAlvo = itens.find((i) => i.contem);
+  let achou = false;
+  // acharNoFim: o item premiado só "aparece" nas últimas fileiras visitadas
+  const janelaFim = opts.janelaFim || 3;
+  const itemAlvo = opts.acharNoFim ? null : itens.find((i) => i.contem);
 
   function dist(it) {
     const j = opts.getJogador();
@@ -30,7 +33,15 @@ Jogo.Busca = function (opts) {
     if (!it || it.revistado) return;
     it.revistado = true; revistados++;
     Jogo.UI.contador(C.txt.revistados + ': ' + revistados + '/' + total);
+    // revelação tardia: só pode conter o item nas últimas `janelaFim` buscas
+    if (opts.acharNoFim && !achou) {
+      const restantes = total - revistados;     // ainda não revistados
+      if (restantes <= janelaFim - 1) {
+        if (restantes === 0 || Math.random() < 1 / (restantes + 1)) it.contem = true;
+      }
+    }
     if (it.contem) {
+      achou = true;
       Jogo.Audio.sfx('pegar'); Jogo.Audio.sfx('vitoria');
       if (opts.aoAchar) opts.aoAchar(it);
     } else {

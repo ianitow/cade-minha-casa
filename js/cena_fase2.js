@@ -31,16 +31,42 @@ Jogo.Cenas.fase2 = function (aoConcluir, aoPerder) {
     { x: 310, y: -210, nome: 'o vaso de planta', tipo: 'planta' },
   ];
   itens.forEach((i) => (i.revistado = false));
-  itens[Math.floor(Math.random() * itens.length)].contem = true;
+  // carteira NÃO é pré-definida: só "aparece" nas últimas fileiras visitadas (acharNoFim)
 
   const busca = Jogo.Busca({
     itens, getJogador: () => joao, dicaPadrao: C.txt.fase2.dica,
+    acharNoFim: true, janelaFim: 3,
     aoAchar: (it) => { carteira = { x: it.x, y: it.y - 46 }; vencer(); },
   });
   const desinscrever = Jogo.Input.aoAcao(busca.revistarProximo);
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
   let alvo = null;
+
+  // ---- portais por onde os ETs surgem ----
+  const portais = [];
+  let portalT = 2.5;
+  function atualizarPortais(dt) {
+    portalT -= dt;
+    if (portalT <= 0 && portais.length < 2 && aliens.aliens.length) {
+      portalT = 3 + Math.random() * 3;
+      portais.push({
+        x: rnd(mundo.x0 + 70, mundo.x1 - 70), y: rnd(mundo.y0 + 30, mundo.y1 - 60),
+        t: 0, escala: 0, fase: 'abre', alien: Math.floor(Math.random() * aliens.aliens.length), espera: 0,
+      });
+    }
+    for (let i = portais.length - 1; i >= 0; i--) {
+      const pt = portais[i]; pt.t += dt;
+      if (pt.fase === 'abre') {
+        pt.escala = Math.min(1, pt.escala + dt * 2.5);
+        if (pt.escala >= 1) { const a = aliens.aliens[pt.alien]; if (a) { a.x = pt.x; a.y = pt.y; } pt.fase = 'fecha'; pt.espera = 0.5; }
+      } else {
+        pt.espera -= dt;
+        if (pt.espera <= 0) { pt.escala = Math.max(0, pt.escala - dt * 2.5); if (pt.escala <= 0) portais.splice(i, 1); }
+      }
+    }
+  }
 
   function update(dt) {
     joao.t += dt;
@@ -55,6 +81,7 @@ Jogo.Cenas.fase2 = function (aoConcluir, aoPerder) {
       joao._ps = (joao._ps || 0) - dt; if (joao._ps <= 0) { Jogo.Audio.sfx('passo'); joao._ps = correndo ? 0.26 : 0.4; }
     } else joao.andando = false;
     alvo = busca.update(dt);
+    atualizarPortais(dt);
     aliens.update(dt, joao);
     R.cam.x += (joao.x - R.cam.x) * Math.min(1, 8 * dt);
     R.cam.y += (joao.y - R.cam.y) * Math.min(1, 8 * dt);
@@ -92,6 +119,7 @@ Jogo.Cenas.fase2 = function (aoConcluir, aoPerder) {
       const rb = (it === alvo && !it.revistado) ? C.d2.busca.raio : 0;
       desenhos.push({ y: it.y, f: () => desenharItem(it, rb) });
     });
+    portais.forEach((pt) => desenhos.push({ y: pt.y, f: () => R.portal(pt.x, pt.y, { t: pt.t, escala: pt.escala }) }));
     aliens.desenhos().forEach((d) => desenhos.push(d));
     desenhos.push({ y: joao.y, f: () => R.pessoa(joao.x, joao.y, { t: joao.t, andando: joao.andando, flip: joao.flip, cor: '#3b82d6' }) });
     if (carteira) desenhos.push({ y: carteira.y + 100, f: () => R.item(carteira.x, carteira.y, 'carteira', joao.t) });
@@ -114,7 +142,7 @@ Jogo.Cenas.fase2 = function (aoConcluir, aoPerder) {
     ctx.restore();
   }
 
-  Jogo.Audio.tocarMusica('f2');
+  Jogo.Audio.tocarLoop('dexter', 0.5);   // música-meme em loop na lanchonete
   Jogo.UI.objetivo(C.txt.fase2.objetivo);
   Jogo.UI.contador(C.txt.revistados + ': 0/' + itens.length);
   R.cam.x = joao.x; R.cam.y = joao.y;
@@ -124,7 +152,7 @@ Jogo.Cenas.fase2 = function (aoConcluir, aoPerder) {
 
   return {
     get ativo() { return est.ativo; },
-    update, draw, _dbg: { vencer },
-    dispose() { desinscrever(); Jogo.Input.mostrarToque(false); },
+    update, draw, _dbg: { vencer, perder },
+    dispose() { desinscrever(); aliens.parar(); Jogo.Audio.pararLoop(); Jogo.Input.mostrarToque(false); },
   };
 };

@@ -321,6 +321,118 @@ Jogo.R = (function () {
     ctx.restore();
   }
 
+  /* ---- vaca (fazendinha), âncora nos pés; o.abduz 0..1 = sobe no raio ---- */
+  function vaca(x, y, o) {
+    o = o || {};
+    if (!noVisor(x, y, 80)) return;
+    const t = o.t || 0;
+    const flut = o.abduz || 0;
+    const lift = flut * 80;
+    const X = sx(x), Y = sy(y) - lift;
+    if (flut < 0.05) sombra(x, y, 18);
+    ctx.save();
+    ctx.translate(X, Y);
+    if (flut > 0) ctx.rotate(Math.sin(t * 6) * 0.18 * flut);
+    rr(-20, -22, 40, 20, '#f3f3f3', 8);                  // corpo
+    ctx.fillStyle = '#2a2a2a';                            // manchas
+    ctx.beginPath(); ctx.ellipse(-8, -14, 6, 5, 0, 0, 7); ctx.ellipse(8, -10, 5, 4, 0, 0, 7); ctx.fill();
+    rr(14, -20, 14, 12, '#f3f3f3', 5);                   // cabeça
+    rr(24, -16, 6, 7, '#f0b8c0', 3);                     // focinho
+    ctx.fillStyle = '#1a1226'; ctx.beginPath(); ctx.arc(19, -16, 1.6, 0, 7); ctx.fill();
+    rr(-16, -4, 5, 8, '#d8d8d8'); rr(-4, -4, 5, 8, '#d8d8d8'); rr(6, -4, 5, 8, '#d8d8d8'); rr(14, -4, 5, 8, '#d8d8d8');
+    ctx.fillStyle = '#caa15a'; ctx.beginPath(); ctx.arc(17, -30, 2, 0, 7); ctx.arc(24, -30, 2, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+
+  /* ---- disco voador + raio trator (o.beam 0..1, o.beamLen) ---- */
+  function nave(x, y, o) {
+    o = o || {};
+    if (!noVisor(x, y, 240)) return;
+    const t = o.t || 0;
+    const X = sx(x), Y = sy(y) + Math.sin(t * 2) * 4;
+    const beam = o.beam || 0, len = o.beamLen || 130;
+    ctx.save();
+    ctx.translate(X, Y);
+    if (beam > 0) {
+      const g = ctx.createLinearGradient(0, 14, 0, 14 + len);
+      g.addColorStop(0, 'rgba(120,255,180,' + (0.5 * beam).toFixed(3) + ')');
+      g.addColorStop(1, 'rgba(120,255,180,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(-10, 14); ctx.lineTo(10, 14); ctx.lineTo(34, 14 + len); ctx.lineTo(-34, 14 + len); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(180,255,210,' + (0.6 * beam).toFixed(3) + ')'; ctx.lineWidth = 2;
+      for (let k = 0; k < 3; k++) { const p = ((t * 0.6 + k / 3) % 1); const yy = 14 + p * len; const w = 10 + p * 24; ctx.beginPath(); ctx.ellipse(0, yy, w, w * 0.3, 0, 0, 7); ctx.stroke(); }
+    }
+    ctx.fillStyle = 'rgba(150,220,255,0.85)';            // domo
+    ctx.beginPath(); ctx.ellipse(0, -6, 16, 14, 0, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#9aa3ad'; ctx.beginPath(); ctx.ellipse(0, 4, 40, 14, 0, 0, 7); ctx.fill();   // disco
+    ctx.fillStyle = '#6b7480'; ctx.beginPath(); ctx.ellipse(0, 8, 40, 10, 0, 0, 7); ctx.fill();
+    for (let k = -2; k <= 2; k++) { const on = (Math.floor(t * 4) + k) % 2 === 0; ctx.fillStyle = on ? '#ffd23f' : '#7a5a1a'; ctx.beginPath(); ctx.arc(k * 14, 6, 2.5, 0, 7); ctx.fill(); }
+    ctx.restore();
+  }
+
+  /* ---- portal giratório (o.escala 0..1 abre/fecha) ---- */
+  function portal(x, y, o) {
+    o = o || {};
+    const t = o.t || 0, e = (o.escala != null ? o.escala : 1);
+    if (e <= 0.01 || !noVisor(x, y, 120)) return;
+    const X = sx(x), Y = sy(y - 26), R0 = 32 * e;
+    ctx.save();
+    ctx.translate(X, Y);
+    let g = ctx.createRadialGradient(0, 0, 2, 0, 0, R0 * 1.7);
+    g.addColorStop(0, 'rgba(196,123,255,0.6)'); g.addColorStop(1, 'rgba(196,123,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, R0 * 1.7, 0, 7); ctx.fill();
+    for (let k = 0; k < 4; k++) {
+      ctx.save(); ctx.rotate(t * (1 + k * 0.5) * (k % 2 ? -1 : 1));
+      ctx.strokeStyle = k % 2 ? 'rgba(120,255,180,0.85)' : 'rgba(196,123,255,0.9)';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(0, 0, R0 * (1 - k * 0.18), R0 * (1 - k * 0.18) * 0.7, 0, 0.3, 5.6); ctx.stroke();
+      ctx.restore();
+    }
+    ctx.fillStyle = 'rgba(10,2,20,0.85)'; ctx.beginPath(); ctx.ellipse(0, 0, R0 * 0.4, R0 * 0.28, 0, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+
+  /* ---- cachorro (easter egg), âncora nos pés ---- */
+  function cachorro(x, y, o) {
+    o = o || {};
+    if (!noVisor(x, y, 60)) return;
+    const t = o.t || 0, X = sx(x), Y = sy(y), dir = o.dir >= 0 ? 1 : -1;
+    sombra(x, y, 14);
+    ctx.save(); ctx.translate(X, Y); ctx.scale(dir, 1);
+    const wag = Math.sin(t * 12) * 5;
+    rr(-16, -16, 30, 12, '#a86a3a', 6);                  // corpo
+    rr(10, -22, 14, 13, '#b97a44', 5);                   // cabeça
+    rr(9, -25, 6, 8, '#7a4a25', 3);                      // orelha
+    ctx.fillStyle = '#1a1226'; ctx.beginPath(); ctx.arc(22, -15, 1.8, 0, 7); ctx.arc(18, -17, 1.5, 0, 7); ctx.fill();
+    rr(-14, -4, 5, 7, '#8a5a30'); rr(-2, -4, 5, 7, '#8a5a30'); rr(8, -4, 5, 7, '#8a5a30');
+    ctx.strokeStyle = '#a86a3a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-16, -14); ctx.lineTo(-24, -20 + wag); ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ---- ícone de "falando" (balão com ondas), em coords de mundo ---- */
+  function iconeVoz(x, y, t) {
+    const X = sx(x), Y = sy(y);
+    ctx.save(); ctx.translate(X, Y);
+    rr(-15, -13, 30, 22, 'rgba(255,255,255,0.96)', 6);
+    ctx.fillStyle = 'rgba(255,255,255,0.96)'; ctx.beginPath(); ctx.moveTo(-5, 9); ctx.lineTo(5, 9); ctx.lineTo(-3, 16); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#1a1226';
+    for (let k = 0; k < 3; k++) { const h = 4 + (0.5 + 0.5 * Math.sin((t || 0) * 10 + k)) * 11; ctx.fillRect(-9 + k * 7, -2 - h / 2, 4, h); }
+    ctx.restore();
+  }
+
+  /* ---- nome flutuante de NPC (ex.: "Seu Zé") ---- */
+  function nomeNPC(x, y, texto, cor) {
+    const X = sx(x), Y = sy(y);
+    ctx.save();
+    ctx.font = 'bold 12px "PressStart", "Courier New", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const w = ctx.measureText(texto).width + 18;
+    ctx.fillStyle = 'rgba(20,12,30,0.92)'; retArred(X - w / 2, Y - 12, w, 22, 5); ctx.fill();
+    ctx.strokeStyle = cor || '#ffd23f'; ctx.lineWidth = 2; retArred(X - w / 2, Y - 12, w, 22, 5); ctx.stroke();
+    ctx.fillStyle = cor || '#ffd23f'; ctx.fillText(texto, X, Y + 1);
+    ctx.restore();
+  }
+
   /* helper local: retângulo arredondado em coords de TELA já transladadas (dentro de save/translate) */
   function rr(x, y, w, h, cor, r) {
     if (cor) ctx.fillStyle = cor;
@@ -342,5 +454,6 @@ Jogo.R = (function () {
     predio, arvore, banco, mesa, caixa, balcao, anelBusca,
     pessoa, pombo, item, holofote,
     alienigena, chefeAgua, gotaAgua, efeitoAlucinacao,
+    vaca, nave, portal, cachorro, iconeVoz, nomeNPC,
   };
 })();
