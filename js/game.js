@@ -49,8 +49,7 @@ Jogo.Game = (function () {
     // 1º limpa o estado anterior, DEPOIS constrói a nova cena
     if (cenaAtual && cenaAtual.dispose) { try { cenaAtual.dispose(); } catch (e) { console.warn(e); } }
     Jogo.Input.limparAcoes();
-    Jogo.Audio.pararLoop();
-    if (somMorte && somMorte.stop) somMorte.stop();   // corta o meme de morte ao sair do game over
+    Jogo.Audio.pararSamples();   // corta loop, voz e QUALQUER mp3 (inclui o meme de morte)
     somMorte = null;
     if (R.tremor) R.tremor(0);
     Jogo.UI.timer(null); Jogo.UI.contador(null); Jogo.UI.dica(null);

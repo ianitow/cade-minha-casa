@@ -171,12 +171,14 @@ Jogo.Audio = (function () {
     peido:      'audio/peido.mp3',
     crianca:    'audio/desdepequena.mp3',
     risada:     'audio/risada-ladrao.mp3',
+    vaca:       'audio/mu-vaca.mp3',
     et_2: 'audio/et_2.mp3', et_3: 'audio/et_3.mp3', et_4: 'audio/et_4.mp3',
     et_5: 'audio/et_5.mp3', et_6: 'audio/et_6.mp3',
   };
   const VOZES = ['et_2', 'et_3', 'et_4', 'et_5', 'et_6'];
   const BUFFERS = {};
   const carregando = {};
+  const ativos = new Set();   // todos os samples mp3 tocando agora (p/ parar tudo)
   let preloaded = false;
   let emDialogo = false;   // durante diálogos: silencia voz/loop dos memes
 
@@ -214,14 +216,18 @@ Jogo.Audio = (function () {
       src.connect(panner); panner.connect(g);
     } else { src.connect(g); }
     g.connect(mp3Gain || master);
-    src.start();
+    const off = opts.offset || 0;
+    src.start(0, off);
+    const inicio = ctx.currentTime;
     const h = {
-      src, g, panner, tocando: true,
-      stop() { try { src.stop(); } catch (e) {} },
+      src, g, panner, tocando: true, dur: buf.duration,
+      stop() { try { src.stop(); } catch (e) {} ativos.delete(h); },
       setPan(p) { if (panner) panner.pan.value = Math.max(-1, Math.min(1, p)); },
       setVol(v) { g.gain.value = v; },
+      posicao() { return Math.min(buf.duration, (ctx.currentTime - inicio) + off); },  // p/ retomar de onde parou
     };
-    src.onended = () => { h.tocando = false; if (opts.onfim) opts.onfim(); };
+    ativos.add(h);
+    src.onended = () => { h.tocando = false; ativos.delete(h); if (opts.onfim) opts.onfim(); };
     return h;
   }
 
@@ -230,11 +236,19 @@ Jogo.Audio = (function () {
     resumir();
     if (!ctx) return null;
     if (BUFFERS[nome]) return _play(BUFFERS[nome], opts);
-    const stub = { tocando: true, _cancel: false, stop() { this._cancel = true; }, setPan() {}, setVol() {} };
+    const stub = { tocando: true, _cancel: false, stop() { this._cancel = true; }, setPan() {}, setVol() {}, posicao() { return 0; } };
     carregar(nome).then((buf) => {
-      if (buf && !stub._cancel) { const real = _play(buf, opts); stub.stop = () => real.stop(); stub.setPan = real.setPan; stub.setVol = real.setVol; }
+      if (buf && !stub._cancel) { const real = _play(buf, opts); stub.stop = () => real.stop(); stub.setPan = real.setPan; stub.setVol = real.setVol; stub.posicao = real.posicao; }
     });
     return stub;
+  }
+
+  // para TUDO que é sample mp3 (loop, voz e one-shots) — usado ao trocar de cena
+  function pararSamples() {
+    ativos.forEach((h) => { try { h.stop(); } catch (e) {} });
+    ativos.clear();
+    loopAtual = null; loopNome = null;
+    vozAtual = null;
   }
 
   /* loop dedicado p/ música de fase em mp3 (ex.: dexter na Fase 2) */
@@ -353,7 +367,7 @@ Jogo.Audio = (function () {
 
   return {
     resumir, sfx, muu, tocarMusica, pararMusica, alternarMudo,
-    tocarSom, tocarLoop, pararLoop, tocarVoz, vozOcupada, vozAleatoria, carregar, precarregar,
+    tocarSom, tocarLoop, pararLoop, pararSamples, tocarVoz, vozOcupada, vozAleatoria, carregar, precarregar,
     entrarDialogo, sairDialogo,
   };
 })();

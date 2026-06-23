@@ -56,16 +56,18 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
     const cows = [];
     for (let i = 0; i < 3; i++) cows.push({ x: cx - 90 + i * 90 + rnd(-12, 12), y: cy + rnd(-26, 26), abduz: 0 });
     const nv = { x: cx, y: cy - 210, t: Math.random() * 5, alvo: -1, beam: 0, espera: 1 + Math.random() * 3 };
-    let mooT = 2 + Math.random() * 4;
+    let mooT = 3 + Math.random() * 4;
     function mugir(cow, vol) {
+      if (vacaCd > 0) return;            // respeita o intervalo global (não fica mugindo toda hora)
+      vacaCd = 4 + Math.random() * 3;
       const d = Math.hypot(cow.x - joao.x, cow.y - joao.y);
-      Jogo.Audio.muu({ pan: clamp((cow.x - joao.x) / 440, -1, 1), vol: Math.max(0.08, Math.min(vol || 0.55, (vol || 0.55) * (1 - d / 760))) });
+      Jogo.Audio.tocarSom('vaca', { pan: clamp((cow.x - joao.x) / 440, -1, 1), vol: Math.max(0.12, Math.min(vol || 0.6, (vol || 0.6) * (1 - d / 820))) });
     }
     function update(dt) {
       nv.t += dt;
-      // muuu ambiente de uma vaquinha aleatória
+      // muuu ambiente de uma vaquinha aleatória (respeitando o timer global)
       mooT -= dt;
-      if (mooT <= 0) { mooT = 4 + Math.random() * 5; mugir(cows[Math.floor(Math.random() * cows.length)], 0.5); }
+      if (mooT <= 0) { mooT = 5 + Math.random() * 5; mugir(cows[Math.floor(Math.random() * cows.length)], 0.55); }
       if (nv.alvo < 0) {
         nv.beam = Math.max(0, nv.beam - dt * 2);
         nv.x += Math.sin(nv.t * 0.5) * 26 * dt;
@@ -87,6 +89,7 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
     }
     return { cx, cy, update, partes };
   }
+  let vacaCd = 0;   // intervalo global entre mugidos (evita spam)
   const fazendas = [criarFazenda(-520, -360), criarFazenda(520, -380)];
 
   // ---- easter eggs: cachorro + Seu Zé ----
@@ -158,6 +161,7 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
     }
 
     // ---- fazendas ----
+    vacaCd -= dt;
     fazendas.forEach((f) => f.update(dt));
 
     // ---- aliens + alucinação + vozes ----

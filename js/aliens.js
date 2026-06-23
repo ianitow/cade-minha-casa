@@ -98,19 +98,13 @@ Jogo.Aliens = function (opts) {
 
     if (falante) {
       const df = Math.hypot(falante.x - joao.x, falante.y - joao.y);
-      // TROCA DINÂMICA: outro ET ficou bem mais perto → corta e passa pra ele
-      if (prox && prox !== falante && md < df * 0.7) {
-        if (vozHandle) { try { vozHandle.stop(); } catch (e) {} }
-        falante.falando = false; falante = null; vozHandle = null; cooldownVoz = 0;
-        // segue pro bloco de iniciar (toca outra fala do ET mais próximo)
-      } else {
-        if (vozHandle) { vozHandle.setPan(clamp((falante.x - joao.x) / 400, -1, 1)); vozHandle.setVol(volPorDist(df)); }
-        if (!Jogo.Audio.vozOcupada()) { falante.falando = false; falante = null; vozHandle = null; cooldownVoz = 0.25; }
-        return;
-      }
+      if (vozHandle) { vozHandle.setPan(clamp((falante.x - joao.x) / 400, -1, 1)); vozHandle.setVol(volPorDist(df)); }
+      if (!Jogo.Audio.vozOcupada()) { falante.falando = false; falante = null; vozHandle = null; cooldownVoz = 4; }  // limite de 4s entre falas
+      return;
     }
 
     if (cooldownVoz > 0 || vozPausada || Jogo.Audio.vozOcupada() || !prox) return;
+    if (md > vozRaio) { cooldownVoz = 0.5; return; }   // só fala se o ET mais próximo estiver perto
     const pan = clamp((prox.x - joao.x) / 400, -1, 1);
     const h = Jogo.Audio.tocarVoz(Jogo.Audio.vozAleatoria(), { pan, vol: volPorDist(md) });
     if (h) { falante = prox; prox.falando = true; vozHandle = h; }
