@@ -172,6 +172,7 @@ Jogo.Audio = (function () {
   const BUFFERS = {};
   const carregando = {};
   let preloaded = false;
+  let emDialogo = false;   // durante diálogos: silencia voz/loop dos memes
 
   function carregar(nome) {
     if (BUFFERS[nome]) return Promise.resolve(BUFFERS[nome]);
@@ -231,15 +232,16 @@ Jogo.Audio = (function () {
   }
 
   /* loop dedicado p/ música de fase em mp3 (ex.: dexter na Fase 2) */
-  let loopAtual = null, loopNome = null;
+  let loopAtual = null, loopNome = null, loopVol = 0.5;
   function tocarLoop(nome, vol) {
     resumir();
     if (loopNome === nome && loopAtual) return;
     pararLoop(); pararMusica();
     loopNome = nome;
+    loopVol = vol != null ? vol : 0.5;
     carregar(nome).then((buf) => {
       if (!buf || loopNome !== nome) return;
-      loopAtual = _play(buf, { loop: true, vol: vol != null ? vol : 0.5 });
+      loopAtual = _play(buf, { loop: true, vol: emDialogo ? 0 : loopVol });
     });
   }
   function pararLoop() {
@@ -252,7 +254,7 @@ Jogo.Audio = (function () {
   function vozOcupada() { return !!(vozAtual && vozAtual.tocando); }
   function tocarVoz(nome, opts) {
     resumir();
-    if (vozOcupada()) return null;
+    if (emDialogo || vozOcupada()) return null;
     if (!ctx || !BUFFERS[nome]) { carregar(nome); return null; }   // ainda não pronto → na próxima
     opts = opts || {};
     const fim = opts.onfim;
@@ -260,6 +262,17 @@ Jogo.Audio = (function () {
     return vozAtual;
   }
   function vozAleatoria() { return VOZES[Math.floor(Math.random() * VOZES.length)]; }
+
+  /* ao abrir/fechar um diálogo: silencia vozes/loop dos memes (eventos seguem) */
+  function entrarDialogo() {
+    emDialogo = true;
+    if (vozAtual) { try { vozAtual.stop(); } catch (e) {} vozAtual = null; }
+    if (loopAtual) loopAtual.setVol(0);
+  }
+  function sairDialogo() {
+    emDialogo = false;
+    if (loopAtual) loopAtual.setVol(loopVol);
+  }
 
   /* ====================== MÚSICA (chiptune) ====================== */
   // Sequenciador de 16 passos (semicolcheias). Cada fase tem melodia + baixo.
@@ -335,5 +348,6 @@ Jogo.Audio = (function () {
   return {
     resumir, sfx, muu, tocarMusica, pararMusica, alternarMudo,
     tocarSom, tocarLoop, pararLoop, tocarVoz, vozOcupada, vozAleatoria, carregar, precarregar,
+    entrarDialogo, sairDialogo,
   };
 })();

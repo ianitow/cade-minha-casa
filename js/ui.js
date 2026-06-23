@@ -98,6 +98,7 @@ Jogo.UI = (function () {
   // ---- MENU inicial ----
   function menu(opts) {
     limparOverlay();
+    if (Jogo.Audio.sairDialogo) Jogo.Audio.sairDialogo();
     el.overlay.className = 'menu';
     const p = painel(
       '<h1>' + opts.titulo + '</h1>' +
@@ -162,6 +163,7 @@ Jogo.UI = (function () {
     const C = Jogo.CONFIG;
     limparOverlay();
     el.overlay.className = 'dialogo';
+    if (Jogo.Audio.entrarDialogo) Jogo.Audio.entrarDialogo();   // silencia memes durante o diálogo
 
     const caixa = document.createElement('div');
     caixa.className = 'caixaDialogo';
@@ -220,7 +222,7 @@ Jogo.UI = (function () {
       }
       i++;
       if (i < linhas.length) mostrarLinha(i);
-      else { limparOverlay(); if (aoFim) aoFim(); }
+      else { limparOverlay(); if (Jogo.Audio.sairDialogo) Jogo.Audio.sairDialogo(); if (aoFim) aoFim(); }
     }
 
     mostrarLinha(0);
@@ -236,6 +238,7 @@ Jogo.UI = (function () {
   // ---- TELA DE FIM / VITÓRIA ----
   function telaFim(opts) {
     limparOverlay();
+    if (Jogo.Audio.sairDialogo) Jogo.Audio.sairDialogo();
     el.overlay.className = 'fim';
     const linhasHtml = (opts.linhas || []).map((l) => '<p class="linha">' + l + '</p>').join('');
     const p = painel(
