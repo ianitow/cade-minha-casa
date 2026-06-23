@@ -74,6 +74,7 @@ Jogo.Aliens = function (opts) {
     }
     nivel = clamp(nivel + (pressao > 0 ? pressao * subida : -descida) * dt, 0, 1);
     Jogo.UI.alucinacao(nivel);
+    if (Jogo.R.tremor) Jogo.R.tremor(nivel);   // tremedeira cresce com a alucinação
     // zumbido de tensão enquanto perto
     if (pressao > 0) { somT -= dt; if (somT <= 0) { Jogo.Audio.sfx('alien'); somT = 1.1 - Math.min(0.7, pressao * 0.3); } }
     if (nivel >= 1) perder('surto');
@@ -123,6 +124,7 @@ Jogo.Aliens = function (opts) {
     if (vozHandle) { try { vozHandle.stop(); } catch (e) {} }
     if (falante) falante.falando = false;
     falante = null; vozHandle = null;
+    if (Jogo.R.tremor) Jogo.R.tremor(0);
   }
 
   // a água do boss (Fase 4) também alimenta ESTE medidor

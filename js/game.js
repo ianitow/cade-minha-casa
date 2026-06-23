@@ -50,6 +50,7 @@ Jogo.Game = (function () {
     if (cenaAtual && cenaAtual.dispose) { try { cenaAtual.dispose(); } catch (e) { console.warn(e); } }
     Jogo.Input.limparAcoes();
     Jogo.Audio.pararLoop();
+    if (R.tremor) R.tremor(0);
     Jogo.UI.timer(null); Jogo.UI.contador(null); Jogo.UI.dica(null);
     Jogo.UI.alucinacao(null); Jogo.UI.chefeVida(null); Jogo.UI.mostrarHUD(false);
     const nova = fabrica();
@@ -80,6 +81,7 @@ Jogo.Game = (function () {
     if (motivo === 'capturado') Jogo.Audio.tocarSom('morte_et', { vol: 1 });   // "busquem conhecimento"
     else if (motivo === 'surto') Jogo.Audio.tocarSom('surto', { vol: 1 });      // miau triste
     else Jogo.Audio.sfx('derrota');
+    Jogo.Audio.tocarSom('gyro', { vol: 1 });   // "foi quando o Gyro finalmente entendeu" (toca em toda morte)
     Jogo.UI.dialogo(linhas, () => {
       Jogo.UI.telaFim({
         titulo: C.txt.gameoverTitulo,

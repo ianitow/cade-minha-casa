@@ -57,7 +57,7 @@ Jogo.CONFIG = {
     /* ---- Aliens (alucinação da ressaca) — em TODAS as fases ----
      * passeio < player.andar (235) → sempre dá pra fugir.
      * aura: distância onde a alucinação sobe. captura: encostou = game over. */
-    aliens: { passeio: 90, aura: 210, captura: 40, subida: 0.5, descida: 0.3 },
+    aliens: { passeio: 90, aura: 230, captura: 40, subida: 1.05, descida: 0.28 },
 
     /* quantos aliens / pombos por fase */
     fase1Extra: { quantos: 8, aliens: 4 },

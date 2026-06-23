@@ -107,7 +107,7 @@ Jogo.Cenas.fase4 = function (aoConcluir, aoPerder) {
       w.t += dt; w.x += w.vx * dt; w.y += w.vy * dt;
       if (Math.hypot(w.x - joao.x, w.y - (joao.y - 22)) < CF.raioDano) {
         aguas.splice(i, 1); Jogo.Audio.sfx('dano'); aliens.bump(CF.spike);
-        if (bolhaCd <= 0) { Jogo.Audio.tocarSom('boss_bolha', { vol: 0.9 }); bolhaCd = 0.5; }
+        if (bolhaCd <= 0) { Jogo.Audio.tocarSom(Math.random() < 0.5 ? 'boss_bolha' : 'risada', { vol: 0.95 }); bolhaCd = 0.5; }
         continue;
       }
       if (w.x < mundo.x0 - 60 || w.x > mundo.x1 + 60 || w.y < mundo.y0 - 60 || w.y > mundo.y1 + 120) aguas.splice(i, 1);

@@ -39,10 +39,16 @@ Jogo.Cenas.fase3 = function (aoConcluir, aoPerder) {
   const desinscrever = Jogo.Input.aoAcao(busca.revistarProximo);
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function pv(o) {
+    const d = Math.hypot(o.x - joao.x, o.y - joao.y);
+    return { pan: clamp((o.x - joao.x) / 420, -1, 1), vol: Math.max(0.12, Math.min(1, 1 - d / (o.raio * 1.2))) };
+  }
+  // gato no canto do bar (mia ao chegar perto; para ao se afastar)
+  const gato = { x: -420, y: 300, t: 0, dir: 1, raio: 150, cd: 1.0, maxT: 0, falando: false, _h: null };
   let alvo = null;
 
   function update(dt) {
-    joao.t += dt;
+    joao.t += dt; gato.t += dt;
     const e = Jogo.Input.eixo();
     const mag = Math.hypot(e.x, e.y);
     if (mag > 0.05) {
@@ -55,6 +61,22 @@ Jogo.Cenas.fase3 = function (aoConcluir, aoPerder) {
     } else joao.andando = false;
     alvo = busca.update(dt);
     aliens.update(dt, joao);
+
+    // ---- gato (mia perto; PARA ao se afastar) ----
+    gato.cd -= dt;
+    const distGato = Math.hypot(gato.x - joao.x, gato.y - joao.y);
+    if (gato._h) {
+      const d = pv(gato);
+      if (gato._h.setPan) { gato._h.setPan(d.pan); gato._h.setVol(d.vol); }
+      gato.maxT -= dt;
+      const acabou = (gato._h.tocando === false) || gato.maxT <= 0;
+      if (distGato > gato.raio * 1.1 || acabou) { if (gato._h.stop) gato._h.stop(); gato._h = null; gato.falando = false; gato.cd = acabou ? 5 : 1.0; }
+    } else if (gato.cd <= 0 && distGato < gato.raio) {
+      const d = pv(gato);
+      gato._h = Jogo.Audio.tocarSom('gato', { pan: d.pan, vol: d.vol });
+      gato.falando = true; gato.maxT = 4;
+    }
+
     R.cam.x += (joao.x - R.cam.x) * Math.min(1, 8 * dt);
     R.cam.y += (joao.y - R.cam.y) * Math.min(1, 8 * dt);
   }
@@ -92,6 +114,7 @@ Jogo.Cenas.fase3 = function (aoConcluir, aoPerder) {
       desenhos.push({ y: it.y, f: () => desenharItem(it, rb) });
     });
     aliens.desenhos().forEach((d) => desenhos.push(d));
+    desenhos.push({ y: gato.y, f: () => { R.gato(gato.x, gato.y, { t: gato.t, dir: gato.dir }); if (gato.falando) R.iconeVoz(gato.x, gato.y - 36, gato.t); } });
     desenhos.push({ y: joao.y, f: () => R.pessoa(joao.x, joao.y, { t: joao.t, andando: joao.andando, flip: joao.flip, cor: '#3b82d6' }) });
     if (chave) desenhos.push({ y: chave.y + 100, f: () => R.item(chave.x, chave.y, 'chave', joao.t) });
     desenhos.sort((a, b) => a.y - b.y).forEach((d) => d.f());
@@ -128,6 +151,6 @@ Jogo.Cenas.fase3 = function (aoConcluir, aoPerder) {
   return {
     get ativo() { return est.ativo; },
     update, draw, _dbg: { vencer, perder },
-    dispose() { desinscrever(); aliens.parar(); Jogo.Input.mostrarToque(false); },
+    dispose() { desinscrever(); aliens.parar(); if (gato._h && gato._h.stop) gato._h.stop(); Jogo.Input.mostrarToque(false); },
   };
 };

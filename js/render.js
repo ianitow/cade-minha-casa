@@ -26,8 +26,17 @@ Jogo.R = (function () {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  const sx = (x) => x - cam.x + W / 2;
-  const sy = (y) => y - cam.y + H / 2;
+  let shx = 0, shy = 0;
+  const sx = (x) => x - cam.x + shx + W / 2;
+  const sy = (y) => y - cam.y + shy + H / 2;
+  // tremedeira de tela: intensidade 0..1 (cresce com a alucinação)
+  function tremor(intensidade) {
+    const m = intensidade > 0 ? intensidade : 0;
+    const amp = Math.max(0, m - 0.12) * 18;
+    if (amp <= 0) { shx = 0; shy = 0; return; }
+    shx = (Math.random() * 2 - 1) * amp;
+    shy = (Math.random() * 2 - 1) * amp;
+  }
   function noVisor(x, y, m) { m = m || 120; const X = sx(x), Y = sy(y); return X > -m && X < W + m && Y > -m && Y < H + m; }
 
   /* ---- primitivas (recebem coords de MUNDO) ---- */
@@ -409,6 +418,57 @@ Jogo.R = (function () {
     ctx.restore();
   }
 
+  /* ---- galinha (Fase 1), âncora nos pés ---- */
+  function galinha(x, y, o) {
+    o = o || {};
+    if (!noVisor(x, y, 50)) return;
+    const t = o.t || 0, X = sx(x), Y = sy(y), dir = o.dir >= 0 ? 1 : -1;
+    const bob = Math.abs(Math.sin(t * 8)) * 3;
+    sombra(x, y, 12);
+    ctx.save(); ctx.translate(X, Y - bob); ctx.scale(dir, 1);
+    // corpo
+    ctx.fillStyle = '#f5f5f5'; ctx.beginPath(); ctx.ellipse(0, -12, 12, 11, 0, 0, 7); ctx.fill();
+    // asa
+    ctx.fillStyle = '#e0e0e0'; ctx.beginPath(); ctx.ellipse(-2, -12, 6, 7, 0, 0, 7); ctx.fill();
+    // cabeça
+    ctx.fillStyle = '#f5f5f5'; ctx.beginPath(); ctx.arc(8, -22, 6, 0, 7); ctx.fill();
+    // crista + barbela
+    ctx.fillStyle = '#e0443a'; ctx.beginPath(); ctx.arc(7, -28, 2.4, 0, 7); ctx.arc(10, -27, 2.2, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(9, -17, 2, 0, 7); ctx.fill();
+    // bico
+    ctx.fillStyle = '#f2a23a'; ctx.beginPath(); ctx.moveTo(13, -22); ctx.lineTo(19, -20); ctx.lineTo(13, -19); ctx.closePath(); ctx.fill();
+    // olho
+    ctx.fillStyle = '#1a1226'; ctx.beginPath(); ctx.arc(9, -23, 1.3, 0, 7); ctx.fill();
+    // pernas
+    ctx.strokeStyle = '#f2a23a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-3, -2); ctx.lineTo(-3, 2); ctx.moveTo(4, -2); ctx.lineTo(4, 2); ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ---- gato (Fase 3, no escuro: olhinhos brilham), âncora nos pés ---- */
+  function gato(x, y, o) {
+    o = o || {};
+    if (!noVisor(x, y, 50)) return;
+    const t = o.t || 0, X = sx(x), Y = sy(y), dir = o.dir >= 0 ? 1 : -1;
+    sombra(x, y, 13);
+    ctx.save(); ctx.translate(X, Y); ctx.scale(dir, 1);
+    const cor = '#5a5560', cor2 = '#46414c';
+    // rabo (balança)
+    ctx.strokeStyle = cor; ctx.lineWidth = 4; ctx.beginPath();
+    ctx.moveTo(-12, -8); ctx.quadraticCurveTo(-22, -10, -20 + Math.sin(t * 4) * 4, -20); ctx.stroke();
+    // corpo
+    ctx.fillStyle = cor; ctx.beginPath(); ctx.ellipse(-2, -8, 13, 8, 0, 0, 7); ctx.fill();
+    // cabeça
+    ctx.fillStyle = cor2; ctx.beginPath(); ctx.arc(10, -16, 7, 0, 7); ctx.fill();
+    // orelhas
+    ctx.beginPath(); ctx.moveTo(5, -22); ctx.lineTo(7, -28); ctx.lineTo(10, -22); ctx.closePath();
+    ctx.moveTo(12, -22); ctx.lineTo(15, -28); ctx.lineTo(16, -22); ctx.closePath(); ctx.fill();
+    // olhos que brilham (verde)
+    ctx.fillStyle = '#9cff7a'; ctx.beginPath(); ctx.arc(8, -16, 1.7, 0, 7); ctx.arc(13, -16, 1.7, 0, 7); ctx.fill();
+    // patas
+    ctx.fillStyle = cor2; rr(-8, -2, 4, 4, cor2); rr(2, -2, 4, 4, cor2);
+    ctx.restore();
+  }
+
   /* ---- ícone de "falando" (balão com ondas), em coords de mundo ---- */
   function iconeVoz(x, y, t) {
     const X = sx(x), Y = sy(y);
@@ -454,6 +514,6 @@ Jogo.R = (function () {
     predio, arvore, banco, mesa, caixa, balcao, anelBusca,
     pessoa, pombo, item, holofote,
     alienigena, chefeAgua, gotaAgua, efeitoAlucinacao,
-    vaca, nave, portal, cachorro, iconeVoz, nomeNPC,
+    vaca, nave, portal, cachorro, galinha, gato, iconeVoz, nomeNPC, tremor,
   };
 })();

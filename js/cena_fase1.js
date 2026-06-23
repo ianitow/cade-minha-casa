@@ -93,9 +93,12 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
   const dog = { x: 260, y: 600, t: 0, dir: -1, raio: 150, cd: 1.5, maxT: 0, falando: false, _h: null };
   // Seu Zé fica em frente ao BAR DO ZÉ (topo do mapa), perto da entrada
   const ze = { x: 170, y: mundo.y0 + 130, t: 0, raio: 160, cd: 1.2, falando: false, _h: null };
+  // galinha gritando perto de uma casa
+  const gal = { x: 520, y: 470, t: 0, dir: -1, raio: 150, cd: 1.0, maxT: 0, falando: false, _h: null };
+  let pruuCd = 1.0;   // arrulho dos pombos por perto
 
   function update(dt) {
-    joao.t += dt; dog.t += dt; ze.t += dt;
+    joao.t += dt; dog.t += dt; ze.t += dt; gal.t += dt;
 
     // ---- João ----
     const e = Jogo.Input.eixo();
@@ -145,6 +148,15 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
       if (dist < PB.raioCaptura) { if (p.temCelular) { vencer(); return; } else pombaErrada(p); }
     }
 
+    // ---- arrulho (pruu) do pombo mais próximo ----
+    pruuCd -= dt;
+    if (pruuCd <= 0) {
+      let prox = null, md = 300;
+      for (const p of pombos) { if (!p.vivo || p.foraDeCena) continue; const dd = Math.hypot(p.x - joao.x, p.y - joao.y); if (dd < md) { md = dd; prox = p; } }
+      if (prox) { const d = pv({ x: prox.x, y: prox.y, raio: 320 }); Jogo.Audio.tocarSom('pruu', { pan: d.pan, vol: d.vol }); pruuCd = 1.2 + Math.random() * 1.4; }
+      else pruuCd = 0.5;
+    }
+
     // ---- fazendas ----
     fazendas.forEach((f) => f.update(dt));
 
@@ -168,6 +180,21 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
       const d = pv(dog);
       dog._h = Jogo.Audio.tocarSom('cachorro', { pan: d.pan, vol: d.vol });
       dog.falando = true; dog.maxT = 8;
+    }
+
+    // ---- galinha (grita perto; PARA ao se afastar) ----
+    gal.cd -= dt;
+    const distGal = Math.hypot(gal.x - joao.x, gal.y - joao.y);
+    if (gal._h) {
+      const d = pv(gal);
+      if (gal._h.setPan) { gal._h.setPan(d.pan); gal._h.setVol(d.vol); }
+      gal.maxT -= dt;
+      const acabou = (gal._h.tocando === false) || gal.maxT <= 0;
+      if (distGal > gal.raio * 1.1 || acabou) { if (gal._h.stop) gal._h.stop(); gal._h = null; gal.falando = false; gal.cd = acabou ? 5 : 1.0; }
+    } else if (gal.cd <= 0 && distGal < gal.raio) {
+      const d = pv(gal);
+      gal._h = Jogo.Audio.tocarSom('galinha', { pan: d.pan, vol: d.vol });
+      gal.falando = true; gal.maxT = 6;
     }
 
     // ---- Seu Zé (fala usando o canal único de voz; tem PRIORIDADE perto dele) ----
@@ -202,6 +229,7 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
     p.foraDeCena = true;
     p.heading = Math.atan2(p.y - joao.y, p.x - joao.x);
     Jogo.Audio.sfx('pombo');
+    Jogo.Audio.tocarSom('peido', { vol: 1 });   // pombo errado solta um peido
     const l = C.txt.fase1.errado;
     Jogo.UI.balao(l[Math.floor(Math.random() * l.length)], 2200);
   }
@@ -256,6 +284,7 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
     pombos.forEach((p) => { if (p.vivo) lista.push({ y: p.y, f: () => R.pombo(p.x, p.y, { t: p.t, dir: p.dir, hop: PB.hop, hopFreq: PB.hopFreq }) }); });
     aliens.desenhos().forEach((d) => lista.push(d));
     lista.push({ y: dog.y, f: () => { R.cachorro(dog.x, dog.y, { t: dog.t, dir: dog.dir }); if (dog.falando) R.iconeVoz(dog.x, dog.y - 44, dog.t); } });
+    lista.push({ y: gal.y, f: () => { R.galinha(gal.x, gal.y, { t: gal.t, dir: gal.dir }); if (gal.falando) R.iconeVoz(gal.x, gal.y - 40, gal.t); } });
     lista.push({ y: ze.y, f: () => { R.pessoa(ze.x, ze.y, { t: ze.t, andando: false, flip: true, cor: '#9a8a6a' }); R.nomeNPC(ze.x, ze.y - 74, 'Seu Zé', '#ffd23f'); if (ze.falando) R.iconeVoz(ze.x, ze.y - 104, ze.t); } });
     lista.push({ y: joao.y, f: () => R.pessoa(joao.x, joao.y, { t: joao.t, andando: joao.andando, flip: joao.flip, cor: '#3b82d6' }) });
     lista.sort((a, b) => a.y - b.y).forEach((d) => d.f());
