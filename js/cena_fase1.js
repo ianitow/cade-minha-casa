@@ -93,8 +93,8 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
   const dog = { x: 260, y: 600, t: 0, dir: -1, raio: 150, cd: 1.5, maxT: 0, falando: false, _h: null };
   // Seu Zé fica em frente ao BAR DO ZÉ (topo do mapa), perto da entrada
   const ze = { x: 170, y: mundo.y0 + 130, t: 0, raio: 160, cd: 1.2, falando: false, _h: null };
-  // galinha gritando perto de uma casa
-  const gal = { x: 520, y: 470, t: 0, dir: -1, raio: 150, cd: 1.0, maxT: 0, falando: false, _h: null };
+  // galinha na grama aberta, logo perto do início (bem visível)
+  const gal = { x: 150, y: 470, t: 0, dir: -1, raio: 150, cd: 1.0, maxT: 0, falando: false, _h: null };
   let pruuCd = 1.0;   // arrulho dos pombos por perto
 
   function update(dt) {
