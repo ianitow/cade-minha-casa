@@ -50,6 +50,8 @@ Jogo.Game = (function () {
     if (cenaAtual && cenaAtual.dispose) { try { cenaAtual.dispose(); } catch (e) { console.warn(e); } }
     Jogo.Input.limparAcoes();
     Jogo.Audio.pararLoop();
+    if (somMorte && somMorte.stop) somMorte.stop();   // corta o meme de morte ao sair do game over
+    somMorte = null;
     if (R.tremor) R.tremor(0);
     Jogo.UI.timer(null); Jogo.UI.contador(null); Jogo.UI.dica(null);
     Jogo.UI.alucinacao(null); Jogo.UI.chefeVida(null); Jogo.UI.mostrarHUD(false);
@@ -58,6 +60,7 @@ Jogo.Game = (function () {
   }
 
   let faseAtual = 1;
+  let somMorte = null;   // handle do meme de morte (p/ cortar ao reiniciar/voltar)
 
   /* -------- estados -------- */
   function irMenu() { trocar(cenaMenu); }
@@ -78,10 +81,9 @@ Jogo.Game = (function () {
     const go = C.txt.gameover || {};
     const linhas = go[motivo] || go.padrao || ['Game over'];
     Jogo.Audio.pararLoop();
-    if (motivo === 'capturado') Jogo.Audio.tocarSom('morte_et', { vol: 1 });   // "busquem conhecimento"
-    else if (motivo === 'surto') Jogo.Audio.tocarSom('surto', { vol: 1 });      // miau triste
-    else Jogo.Audio.sfx('derrota');
-    Jogo.Audio.tocarSom('gyro', { vol: 1 });   // "foi quando o Gyro finalmente entendeu" (toca em toda morte)
+    // toca SÓ UM som de morte: ou o do motivo, ou o do Gyro (nunca os dois juntos)
+    const causa = motivo === 'capturado' ? 'morte_et' : motivo === 'surto' ? 'surto' : null;
+    somMorte = (causa && Math.random() < 0.5) ? Jogo.Audio.tocarSom(causa, { vol: 1 }) : Jogo.Audio.tocarSom('gyro', { vol: 1 });
     Jogo.UI.dialogo(linhas, () => {
       Jogo.UI.telaFim({
         titulo: C.txt.gameoverTitulo,
