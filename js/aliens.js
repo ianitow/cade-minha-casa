@@ -25,7 +25,7 @@ Jogo.Aliens = function (opts) {
 
   const aliens = [];
   let nivel = 0, perdeu = false, somT = 0;
-  let falante = null, vozHandle = null, cooldownVoz = 0.8;
+  let falante = null, vozHandle = null, cooldownVoz = 0.4, vozPausada = false;
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function rnd(a, b) { return a + Math.random() * (b - a); }
@@ -82,28 +82,32 @@ Jogo.Aliens = function (opts) {
     return nivel;
   }
 
-  // vozes dos ETs: UMA por vez, posicional (pan/vol por distância)
+  // pan/vol posicional p/ voz; SEMPRE há alguém falando (um de cada vez)
+  function volPorDist(d) { return Math.max(0.12, Math.min(1, 1 - d / (vozRaio * 2))) * vozVol; }
+
   function atualizarVozes(dt, joao) {
     cooldownVoz -= dt;
     if (falante) {
       const d = Math.hypot(falante.x - joao.x, falante.y - joao.y);
       if (vozHandle) {
         vozHandle.setPan(clamp((falante.x - joao.x) / 400, -1, 1));
-        vozHandle.setVol(Math.max(0.08, Math.min(1, 1 - d / (vozRaio * 1.25))) * vozVol);
+        vozHandle.setVol(volPorDist(d));
       }
-      if (!Jogo.Audio.vozOcupada()) { falante.falando = false; falante = null; vozHandle = null; cooldownVoz = 1.4 + Math.random() * 1.8; }
+      if (!Jogo.Audio.vozOcupada()) { falante.falando = false; falante = null; vozHandle = null; cooldownVoz = 0.25; }
       return;
     }
-    if (cooldownVoz > 0 || Jogo.Audio.vozOcupada()) return;
-    let melhor = null, md = vozRaio;
+    if (cooldownVoz > 0 || vozPausada || Jogo.Audio.vozOcupada() || !aliens.length) return;
+    // escolhe SEMPRE o ET mais próximo do João (o de perto é o que se ouve)
+    let melhor = aliens[0], md = Infinity;
     for (const a of aliens) { const d = Math.hypot(a.x - joao.x, a.y - joao.y); if (d < md) { md = d; melhor = a; } }
-    if (!melhor) return;
     const pan = clamp((melhor.x - joao.x) / 400, -1, 1);
-    const vol = Math.max(0.12, Math.min(1, 1 - md / (vozRaio * 1.25))) * vozVol;
-    const h = Jogo.Audio.tocarVoz(Jogo.Audio.vozAleatoria(), { pan, vol });
+    const h = Jogo.Audio.tocarVoz(Jogo.Audio.vozAleatoria(), { pan, vol: volPorDist(md) });
     if (h) { falante = melhor; melhor.falando = true; vozHandle = h; }
     else cooldownVoz = 0.4;
   }
+
+  // permite a cena "ceder" o canal de voz a um NPC (ex.: Seu Zé perto do bar)
+  function pausarVoz(b) { vozPausada = !!b; }
 
   function parar() {
     if (vozHandle) { try { vozHandle.stop(); } catch (e) {} }
@@ -140,7 +144,7 @@ Jogo.Aliens = function (opts) {
   }
 
   return {
-    update, desenhos, efeito, bump, reset, parar,
+    update, desenhos, efeito, bump, reset, parar, pausarVoz,
     get nivel() { return nivel; },
     get perdeu() { return perdeu; },
     aliens,

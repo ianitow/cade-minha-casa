@@ -9,6 +9,8 @@ window.Jogo = window.Jogo || {};
 Jogo.Audio = (function () {
   let ctx = null;
   let master = null;
+  let musicaGain = null;   // chiptune de fundo (mais baixo)
+  let mp3Gain = null;      // vozes/memes em mp3 (mais alto)
   let mudo = false;
   let noiseBuffer = null;
 
@@ -20,6 +22,8 @@ Jogo.Audio = (function () {
     master = ctx.createGain();
     master.gain.value = 0.5;
     master.connect(ctx.destination);
+    musicaGain = ctx.createGain(); musicaGain.gain.value = 0.4; musicaGain.connect(master);  // fundo baixo
+    mp3Gain = ctx.createGain();    mp3Gain.gain.value = 1.7;    mp3Gain.connect(master);     // mp3 alto
     noiseBuffer = criarNoise();
   }
   function resumir() {
@@ -163,7 +167,7 @@ Jogo.Audio = (function () {
       panner.pan.value = Math.max(-1, Math.min(1, opts.pan));
       src.connect(panner); panner.connect(g);
     } else { src.connect(g); }
-    g.connect(master);
+    g.connect(mp3Gain || master);
     src.start();
     const h = {
       src, g, panner, tocando: true,
@@ -246,12 +250,12 @@ Jogo.Audio = (function () {
     const secStep = (60 / seq.bpm) / 4;
     // melodia
     const m = seq.mel[n];
-    if (m) tom({ freq: midiFreq(m), t, dur: secStep * 0.9, tipo: 'square', vol: 0.12 });
+    if (m) tom({ freq: midiFreq(m), t, dur: secStep * 0.9, tipo: 'square', vol: 0.12, destino: musicaGain });
     // baixo
     const b = seq.bax[n];
-    if (b) tom({ freq: midiFreq(b), t, dur: secStep * 3.5, tipo: 'triangle', vol: 0.14 });
+    if (b) tom({ freq: midiFreq(b), t, dur: secStep * 3.5, tipo: 'triangle', vol: 0.14, destino: musicaGain });
     // chimbal nos contratempos
-    if (n % 2 === 1) ruido({ t, dur: 0.03, corte: 7000, vol: 0.04 });
+    if (n % 2 === 1) ruido({ t, dur: 0.03, corte: 7000, vol: 0.04, destino: musicaGain });
   }
 
   function scheduler() {

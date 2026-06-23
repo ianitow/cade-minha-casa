@@ -41,7 +41,7 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
   // ---- cenário: prédios da cidade (em cima) + casas/árvores (mapa todo) ----
   const predios = [
     [-740, -940, 160, 260, '#c46b9e'], [-540, -960, 150, 230, '#7e6bd0'], [-330, -940, 150, 250, '#5b8dd6'],
-    [300, -960, 160, 260, '#e0a14f'], [500, -940, 160, 240, '#6bb0c4'], [-120, -980, 180, 200, '#c4796b'],
+    [300, -960, 160, 260, '#e0a14f'], [500, -940, 160, 240, '#6bb0c4'],
     [-740, -640, 150, 220, '#8a6bd0'], [560, -640, 150, 220, '#d0796b'],
   ];
   const casas = [   // [x, y, cor]
@@ -82,8 +82,9 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
   const fazendas = [criarFazenda(-520, -360), criarFazenda(520, -380)];
 
   // ---- easter eggs: cachorro + Seu Zé ----
-  const dog = { x: 260, y: 600, t: 0, dir: -1, raio: 150, cd: 1.5, timer: 0, falando: false, _h: null };
-  const ze = { x: -240, y: 620, t: 0, raio: 150, cd: 1.2, falando: false, _h: null };
+  const dog = { x: 260, y: 600, t: 0, dir: -1, raio: 150, cd: 1.5, maxT: 0, falando: false, _h: null };
+  // Seu Zé fica em frente ao BAR DO ZÉ (topo do mapa), perto da entrada
+  const ze = { x: 170, y: mundo.y0 + 130, t: 0, raio: 160, cd: 1.2, falando: false, _h: null };
 
   function update(dt) {
     joao.t += dt; dog.t += dt; ze.t += dt;
@@ -142,22 +143,36 @@ Jogo.Cenas.fase1 = function (aoConcluir, aoPerder) {
     // ---- aliens + alucinação + vozes ----
     aliens.update(dt, joao);
 
-    // ---- cachorro (late ao chegar perto) ----
+    // ---- cachorro (late perto; PARA o som ao se afastar) ----
     dog.cd -= dt;
-    if (dog.timer > 0) { dog.timer -= dt; if (dog.timer <= 0) dog.falando = false; const d = pv(dog); if (dog._h && dog._h.setPan) { dog._h.setPan(d.pan); dog._h.setVol(d.vol); } }
-    if (dog.cd <= 0 && Math.hypot(dog.x - joao.x, dog.y - joao.y) < dog.raio) {
-      const d = pv(dog); dog._h = Jogo.Audio.tocarSom('cachorro', { pan: d.pan, vol: d.vol });
-      dog.cd = 6; dog.timer = 2.4; dog.falando = true;
+    const distDog = Math.hypot(dog.x - joao.x, dog.y - joao.y);
+    if (dog._h) {
+      const d = pv(dog);
+      if (dog._h.setPan) { dog._h.setPan(d.pan); dog._h.setVol(d.vol); }
+      dog.maxT -= dt;
+      const acabou = (dog._h.tocando === false) || dog.maxT <= 0;
+      if (distDog > dog.raio * 1.1 || acabou) {           // afastou ou acabou → para
+        if (dog._h.stop) dog._h.stop();
+        dog._h = null; dog.falando = false;
+        dog.cd = acabou ? 6 : 1.0;
+      }
+    } else if (dog.cd <= 0 && distDog < dog.raio) {
+      const d = pv(dog);
+      dog._h = Jogo.Audio.tocarSom('cachorro', { pan: d.pan, vol: d.vol });
+      dog.falando = true; dog.maxT = 8;
     }
 
-    // ---- Seu Zé (fala usando o canal único de voz, igual aos ETs) ----
+    // ---- Seu Zé (fala usando o canal único de voz; tem PRIORIDADE perto dele) ----
+    const pertoZe = Math.hypot(ze.x - joao.x, ze.y - joao.y) < ze.raio;
+    aliens.pausarVoz(pertoZe);   // perto do Zé os ETs cedem o canal
     ze.cd -= dt;
     if (ze._h) {
-      const d = pv(ze); ze._h.setPan(d.pan); ze._h.setVol(d.vol);
-      if (!Jogo.Audio.vozOcupada()) { ze._h = null; ze.falando = false; ze.cd = 2 + Math.random() * 2; }
-    } else if (ze.cd <= 0 && Math.hypot(ze.x - joao.x, ze.y - joao.y) < ze.raio && !Jogo.Audio.vozOcupada()) {
-      const d = pv(ze); const h = Jogo.Audio.tocarVoz('seu_ze', { pan: d.pan, vol: d.vol });
-      if (h) { ze._h = h; ze.falando = true; } else ze.cd = 0.4;
+      const d = pv(ze); if (ze._h.setPan) { ze._h.setPan(d.pan); ze._h.setVol(d.vol); }
+      if (!pertoZe) { if (ze._h.stop) ze._h.stop(); ze._h = null; ze.falando = false; ze.cd = 1.0; }   // saiu de perto → para
+      else if (!Jogo.Audio.vozOcupada()) { ze._h = null; ze.falando = false; ze.cd = 1.5 + Math.random() * 1.5; }
+    } else if (pertoZe) {
+      if (Jogo.Audio.vozOcupada()) aliens.parar();        // corta o ET pra o Zé poder falar
+      else if (ze.cd <= 0) { const d = pv(ze); const h = Jogo.Audio.tocarVoz('seu_ze', { pan: d.pan, vol: d.vol }); if (h) { ze._h = h; ze.falando = true; } else ze.cd = 0.4; }
     }
 
     // ---- cronômetro de fôlego ----
