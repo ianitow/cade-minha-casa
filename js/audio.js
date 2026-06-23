@@ -170,7 +170,6 @@ Jogo.Audio = (function () {
     pruu:       'audio/pruu.mp3',
     peido:      'audio/peido.mp3',
     crianca:    'audio/desdepequena.mp3',
-    gyro:       'audio/gyro-morte.mp3',
     risada:     'audio/risada-ladrao.mp3',
     et_2: 'audio/et_2.mp3', et_3: 'audio/et_3.mp3', et_4: 'audio/et_4.mp3',
     et_5: 'audio/et_5.mp3', et_6: 'audio/et_6.mp3',

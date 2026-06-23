@@ -81,9 +81,10 @@ Jogo.Game = (function () {
     const go = C.txt.gameover || {};
     const linhas = go[motivo] || go.padrao || ['Game over'];
     Jogo.Audio.pararLoop();
-    // toca SÓ UM som de morte: ou o do motivo, ou o do Gyro (nunca os dois juntos)
-    const causa = motivo === 'capturado' ? 'morte_et' : motivo === 'surto' ? 'surto' : null;
-    somMorte = (causa && Math.random() < 0.5) ? Jogo.Audio.tocarSom(causa, { vol: 1 }) : Jogo.Audio.tocarSom('gyro', { vol: 1 });
+    if (somMorte && somMorte.stop) somMorte.stop();   // corta um anterior, se houver
+    if (motivo === 'capturado') somMorte = Jogo.Audio.tocarSom('morte_et', { vol: 1 });   // "busquem conhecimento"
+    else if (motivo === 'surto') somMorte = Jogo.Audio.tocarSom('surto', { vol: 1 });      // miau triste
+    else { Jogo.Audio.sfx('derrota'); somMorte = null; }
     Jogo.UI.dialogo(linhas, () => {
       Jogo.UI.telaFim({
         titulo: C.txt.gameoverTitulo,
